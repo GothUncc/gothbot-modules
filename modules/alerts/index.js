@@ -13,63 +13,6 @@ let isProcessingAlert = false;
 let moduleContext = null;
 
 /**
- * Module initialization function
- * Called when the module is loaded
- */
-async function onLoad(ctx) {
-  moduleContext = ctx;
-  
-  // Get module configuration
-  const config = await ctx.getConfig();
-  
-  ctx.logger.info('Alert System module loaded', { config });
-  
-  // Subscribe to platform events
-  subscribeToEvents(ctx, config);
-  
-  // Start alert queue processor
-  processAlertQueue();
-  
-  return {
-    success: true,
-    message: 'Alert System initialized successfully'
-  };
-}
-
-/**
- * Module unload function
- * Called when the module is disabled or unloaded
- */
-async function onUnload(ctx) {
-  ctx.logger.info('Alert System module unloaded');
-  
-  // Clear alert queue
-  alertQueue.length = 0;
-  isProcessingAlert = false;
-  
-  return {
-    success: true,
-    message: 'Alert System stopped'
-  };
-}
-
-/**
- * Configuration update handler
- * Called when module config is updated via UI
- */
-async function onConfigUpdate(ctx, newConfig) {
-  ctx.logger.info('Alert System config updated', { newConfig });
-  
-  // Re-subscribe to events with new config
-  subscribeToEvents(ctx, newConfig);
-  
-  return {
-    success: true,
-    message: 'Configuration updated'
-  };
-}
-
-/**
  * Subscribe to platform events based on configuration
  */
 function subscribeToEvents(ctx, config) {
@@ -319,10 +262,38 @@ async function testAlert(ctx, type = 'follow') {
   };
 }
 
-// Export functions using CommonJS format for isolated-vm compatibility
+// Export module instance using CommonJS format for isolated-vm compatibility
 module.exports = {
-  onLoad,
-  onUnload,
-  onConfigUpdate,
-  testAlert
+  // Required metadata
+  name: 'Alert System',
+  version: '1.0.0',
+  
+  // Lifecycle hooks
+  initialize: async function(context) {
+    moduleContext = context;
+    
+    // Get module configuration
+    const config = await context.getConfig();
+    
+    context.logger.info('Alert System module initialized', { config });
+    
+    // Subscribe to platform events
+    subscribeToEvents(context, config);
+    
+    // Start alert queue processor
+    processAlertQueue();
+  },
+  
+  stop: function() {
+    if (moduleContext) {
+      moduleContext.logger.info('Alert System module stopped');
+    }
+    
+    // Clear alert queue
+    alertQueue.length = 0;
+    isProcessingAlert = false;
+  },
+  
+  // Custom methods for testing
+  testAlert: testAlert
 };

@@ -1,0 +1,46 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-10-16T03:30:00Z",
+  "description": "Official GothBot Module Marketplace",
+  "modules": [
+    {
+      "id": "alerts",
+      "name": "Alert System",
+      "version": "1.0.0",
+      "description": "Multi-platform stream alerts with custom animations, sounds, and TTS support. Display beautiful alerts for follows, subscriptions, raids, donations, and cheers.",
+      "author": "GothBot Team",
+      "category": "overlay",
+      "tags": ["alerts", "overlay", "obs", "notifications", "stream", "twitch", "kick", "youtube"],
+      "icon": "🔔",
+      "downloadUrl": "https://raw.githubusercontent.com/GothUncc/gothomationbotV2/main/modules/alerts",
+      "installType": "bundled",
+      "screenshots": [],
+      "features": [
+        "Multi-platform support (Twitch, Kick, YouTube)",
+        "5 alert types (Follow, Subscribe, Raid, Donation, Cheer)",
+        "5 animation styles (Slide, Fade, Bounce, Zoom, Confetti)",
+        "Custom sound effects with volume control",
+        "Optional Text-to-Speech support",
+        "Smart queue management prevents overlaps",
+        "OBS browser source integration",
+        "17+ configuration options",
+        "Test mode for previewing alerts",
+        "Minimum amount thresholds for donations/cheers"
+      ],
+      "requirements": {
+        "botVersion": ">=2.0.116",
+        "moduleFramework": ">=1.0.0"
+      },
+      "documentation": "https://github.com/GothUncc/gothomationbotV2/blob/main/modules/alerts/README.md",
+      "quickStart": "https://github.com/GothUncc/gothomationbotV2/blob/main/ALERT_SYSTEM_QUICKSTART.md",
+      "repository": "https://github.com/GothUncc/gothomationbotV2",
+      "license": "MIT",
+      "verified": true,
+      "official": true,
+      "downloads": 0,
+      "rating": 5.0,
+      "createdAt": "2025-10-16T00:00:00Z",
+      "updatedAt": "2025-10-16T00:00:00Z"
+    }
+  ]
+}

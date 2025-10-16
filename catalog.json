@@ -12,7 +12,7 @@
       "category": "overlay",
       "tags": ["alerts", "overlay", "obs", "notifications", "stream", "twitch", "kick", "youtube"],
       "icon": "🔔",
-      "downloadUrl": "https://raw.githubusercontent.com/GothUncc/gothomationbotV2/main/modules/alerts/index.js",
+      "downloadUrl": "https://raw.githubusercontent.com/GothUncc/gothbot-modules/main/modules/alerts/index.js",
       "installType": "bundled",
       "screenshots": [],
       "features": [
@@ -31,9 +31,9 @@
         "botVersion": ">=2.0.116",
         "moduleFramework": ">=1.0.0"
       },
-      "documentation": "https://github.com/GothUncc/gothomationbotV2/blob/main/modules/alerts/README.md",
+      "documentation": "https://github.com/GothUncc/gothbot-modules/blob/main/modules/alerts/README.md",
       "quickStart": "https://github.com/GothUncc/gothomationbotV2/blob/main/ALERT_SYSTEM_QUICKSTART.md",
-      "repository": "https://github.com/GothUncc/gothomationbotV2",
+      "repository": "https://github.com/GothUncc/gothbot-modules",
       "license": "MIT",
       "verified": true,
       "official": true,

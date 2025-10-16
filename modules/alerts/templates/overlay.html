@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>GothBot - Alert Overlay</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: transparent;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    #alert-container {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .alert {
+      position: absolute;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      padding: 30px 50px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      color: white;
+      text-align: center;
+      min-width: 400px;
+      max-width: 800px;
+      opacity: 0;
+      transform: scale(0.8);
+      transition: all 0.3s ease;
+    }
+
+    .alert.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .alert.hide {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+
+    /* Alert type specific styles */
+    .alert.follow {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .alert.subscribe {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .alert.raid {
+      background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    }
+
+    .alert.donation {
+      background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+    }
+
+    .alert.cheer {
+      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+      color: #333;
+    }
+
+    /* Alert icon */
+    .alert-icon {
+      font-size: 60px;
+      margin-bottom: 15px;
+      animation: bounce 0.6s ease;
+    }
+
+    /* Alert content */
+    .alert-type {
+      font-size: 18px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      opacity: 0.9;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .alert-username {
+      font-size: 36px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .alert-message {
+      font-size: 20px;
+      opacity: 0.95;
+      margin-top: 10px;
+    }
+
+    .alert-amount {
+      font-size: 42px;
+      font-weight: bold;
+      margin: 15px 0;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .alert-user-message {
+      font-size: 16px;
+      font-style: italic;
+      margin-top: 15px;
+      opacity: 0.85;
+      max-width: 600px;
+      word-wrap: break-word;
+    }
+
+    /* Position variants */
+    .alert.top-left { top: 50px; left: 50px; }
+    .alert.top-center { top: 50px; left: 50%; transform: translateX(-50%) scale(0.8); }
+    .alert.top-center.show { transform: translateX(-50%) scale(1); }
+    .alert.top-right { top: 50px; right: 50px; }
+    .alert.center { top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); }
+    .alert.center.show { transform: translate(-50%, -50%) scale(1); }
+    .alert.bottom-left { bottom: 50px; left: 50px; }
+    .alert.bottom-center { bottom: 50px; left: 50%; transform: translateX(-50%) scale(0.8); }
+    .alert.bottom-center.show { transform: translateX(-50%) scale(1); }
+    .alert.bottom-right { bottom: 50px; right: 50px; }
+
+    /* Animation styles */
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    @keyframes slideIn {
+      from { 
+        opacity: 0;
+        transform: translateX(-100px);
+      }
+      to { 
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes zoomIn {
+      from {
+        opacity: 0;
+        transform: scale(0);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* Animation classes */
+    .alert.slide { animation: slideIn 0.5s ease; }
+    .alert.fade { animation: fadeIn 0.5s ease; }
+    .alert.zoom { animation: zoomIn 0.5s ease; }
+    .alert.confetti { animation: zoomIn 0.5s ease; }
+
+    /* Confetti effect */
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: #f0f;
+      opacity: 0;
+      animation: confetti-fall 3s ease-out forwards;
+    }
+
+    @keyframes confetti-fall {
+      0% {
+        opacity: 1;
+        transform: translateY(-100px) rotate(0deg);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(1080px) rotate(720deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="alert-container"></div>
+  <audio id="alert-sound" preload="auto"></audio>
+
+  <script>
+    // Configuration (populated by server)
+    let config = {
+      alertDuration: 5,
+      animationStyle: 'slide',
+      soundVolume: 50,
+      enableTTS: false,
+      alertPosition: 'top-center'
+    };
+
+    // Current alert
+    let currentAlert = null;
+    let isDisplaying = false;
+
+    // Alert icons by type
+    const alertIcons = {
+      follow: '💜',
+      subscribe: '⭐',
+      raid: '🎉',
+      donation: '💰',
+      cheer: '💎'
+    };
+
+    // Alert type labels
+    const alertLabels = {
+      follow: 'New Follower',
+      subscribe: 'New Subscriber',
+      raid: 'Incoming Raid',
+      donation: 'Donation',
+      cheer: 'Bits Cheered'
+    };
+
+    // Connect to module API
+    async function checkForAlerts() {
+      try {
+        const response = await fetch('/api/modules/alerts/data/currentAlert');
+        const result = await response.json();
+        
+        if (result.success && result.data && !isDisplaying) {
+          displayAlert(result.data);
+        }
+      } catch (error) {
+        console.error('Failed to check for alerts:', error);
+      }
+    }
+
+    // Display alert
+    function displayAlert(alert) {
+      if (!alert || isDisplaying) return;
+      
+      isDisplaying = true;
+      currentAlert = alert;
+
+      // Create alert element
+      const alertEl = document.createElement('div');
+      alertEl.className = `alert ${alert.type} ${config.animationStyle} ${config.alertPosition}`;
+      
+      // Build alert HTML
+      let html = `
+        <div class="alert-icon">${alertIcons[alert.type] || '🔔'}</div>
+        <div class="alert-type">${alertLabels[alert.type] || 'Alert'}</div>
+        <div class="alert-username">${alert.displayName}</div>
+      `;
+      
+      // Add amount for donations/cheers
+      if (alert.type === 'donation') {
+        html += `<div class="alert-amount">${alert.currency} ${alert.amount.toFixed(2)}</div>`;
+      } else if (alert.type === 'cheer') {
+        html += `<div class="alert-amount">${alert.amount} Bits</div>`;
+      } else if (alert.type === 'raid') {
+        html += `<div class="alert-amount">${alert.viewers} Viewers</div>`;
+      }
+      
+      // Add user message if present
+      if (alert.userMessage) {
+        html += `<div class="alert-user-message">"${alert.userMessage}"</div>`;
+      } else {
+        html += `<div class="alert-message">${alert.message}</div>`;
+      }
+      
+      alertEl.innerHTML = html;
+      
+      // Add to DOM
+      const container = document.getElementById('alert-container');
+      container.innerHTML = ''; // Clear previous alerts
+      container.appendChild(alertEl);
+      
+      // Play sound
+      playAlertSound(alert.type);
+      
+      // Show alert with animation
+      setTimeout(() => {
+        alertEl.classList.add('show');
+        
+        // Add confetti effect for special alerts
+        if (config.animationStyle === 'confetti' || alert.type === 'raid') {
+          createConfetti();
+        }
+        
+        // Speak alert if TTS enabled
+        if (config.enableTTS) {
+          speakAlert(alert);
+        }
+      }, 100);
+      
+      // Hide alert after duration
+      setTimeout(() => {
+        alertEl.classList.remove('show');
+        alertEl.classList.add('hide');
+        
+        setTimeout(() => {
+          container.removeChild(alertEl);
+          isDisplaying = false;
+          currentAlert = null;
+        }, 500);
+      }, config.alertDuration * 1000);
+    }
+
+    // Play alert sound
+    function playAlertSound(type) {
+      const audio = document.getElementById('alert-sound');
+      audio.volume = config.soundVolume / 100;
+      
+      // Use custom sound or default
+      const soundFile = `/modules/alerts/sounds/${type}.mp3`;
+      audio.src = soundFile;
+      audio.play().catch(err => console.log('Sound play failed:', err));
+    }
+
+    // Text-to-speech
+    function speakAlert(alert) {
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(alert.message);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = config.soundVolume / 100;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    // Create confetti effect
+    function createConfetti() {
+      const colors = ['#f0f', '#0ff', '#ff0', '#f00', '#0f0', '#00f'];
+      const container = document.getElementById('alert-container');
+      
+      for (let i = 0; i < 50; i++) {
+        setTimeout(() => {
+          const confetti = document.createElement('div');
+          confetti.className = 'confetti';
+          confetti.style.left = Math.random() * 1920 + 'px';
+          confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+          confetti.style.animationDelay = Math.random() * 0.5 + 's';
+          confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+          container.appendChild(confetti);
+          
+          setTimeout(() => {
+            container.removeChild(confetti);
+          }, 5000);
+        }, i * 50);
+      }
+    }
+
+    // Load config from server
+    async function loadConfig() {
+      try {
+        const response = await fetch('/api/modules/alerts/config');
+        const result = await response.json();
+        if (result.success) {
+          config = { ...config, ...result.config };
+        }
+      } catch (error) {
+        console.error('Failed to load config:', error);
+      }
+    }
+
+    // Initialize
+    loadConfig();
+    
+    // Check for alerts every 500ms
+    setInterval(checkForAlerts, 500);
+  </script>
+</body>
+</html>

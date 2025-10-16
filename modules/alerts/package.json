@@ -1,0 +1,121 @@
+{
+  "name": "@gothbot/alerts",
+  "version": "1.0.0",
+  "description": "Multi-platform stream alerts with custom animations, sounds, and TTS support",
+  "main": "index.js",
+  "author": "GothUncc",
+  "license": "MIT",
+  "keywords": ["alerts", "stream", "overlay", "notifications", "obs"],
+  "gothbot": {
+    "displayName": "Alert System",
+    "category": "overlay",
+    "icon": "🔔",
+    "configSchema": {
+      "type": "object",
+      "properties": {
+        "enableFollowAlerts": {
+          "type": "boolean",
+          "title": "Enable Follow Alerts",
+          "description": "Show alerts when someone follows",
+          "default": true
+        },
+        "enableSubscribeAlerts": {
+          "type": "boolean",
+          "title": "Enable Subscribe Alerts",
+          "description": "Show alerts for subscriptions",
+          "default": true
+        },
+        "enableRaidAlerts": {
+          "type": "boolean",
+          "title": "Enable Raid Alerts",
+          "description": "Show alerts for incoming raids",
+          "default": true
+        },
+        "enableDonationAlerts": {
+          "type": "boolean",
+          "title": "Enable Donation Alerts",
+          "description": "Show alerts for donations/tips",
+          "default": true
+        },
+        "enableCheerAlerts": {
+          "type": "boolean",
+          "title": "Enable Cheer Alerts",
+          "description": "Show alerts for bits/cheers",
+          "default": true
+        },
+        "alertDuration": {
+          "type": "number",
+          "title": "Alert Duration (seconds)",
+          "description": "How long each alert displays",
+          "default": 5,
+          "minimum": 2,
+          "maximum": 30
+        },
+        "animationStyle": {
+          "type": "string",
+          "title": "Animation Style",
+          "description": "Animation effect for alerts",
+          "default": "slide",
+          "enum": ["slide", "fade", "bounce", "zoom", "confetti"]
+        },
+        "soundVolume": {
+          "type": "number",
+          "title": "Sound Volume",
+          "description": "Alert sound volume (0-100)",
+          "default": 50,
+          "minimum": 0,
+          "maximum": 100
+        },
+        "enableTTS": {
+          "type": "boolean",
+          "title": "Enable Text-to-Speech",
+          "description": "Read alert messages aloud",
+          "default": false
+        },
+        "ttsVoice": {
+          "type": "string",
+          "title": "TTS Voice",
+          "description": "Text-to-speech voice selection",
+          "default": "en-US",
+          "enum": ["en-US", "en-GB", "en-AU"]
+        },
+        "minDonationAmount": {
+          "type": "number",
+          "title": "Minimum Donation Amount",
+          "description": "Minimum amount to trigger donation alert",
+          "default": 1,
+          "minimum": 0
+        },
+        "minCheerAmount": {
+          "type": "number",
+          "title": "Minimum Cheer Amount",
+          "description": "Minimum bits to trigger cheer alert",
+          "default": 100,
+          "minimum": 0
+        },
+        "customFollowSound": {
+          "type": "string",
+          "title": "Custom Follow Sound URL",
+          "description": "URL to custom sound for follows (optional)"
+        },
+        "customSubSound": {
+          "type": "string",
+          "title": "Custom Subscribe Sound URL",
+          "description": "URL to custom sound for subs (optional)"
+        },
+        "customRaidSound": {
+          "type": "string",
+          "title": "Custom Raid Sound URL",
+          "description": "URL to custom sound for raids (optional)"
+        },
+        "alertPosition": {
+          "type": "string",
+          "title": "Alert Position",
+          "description": "Where to display alerts on screen",
+          "default": "top-center",
+          "enum": ["top-left", "top-center", "top-right", "center", "bottom-left", "bottom-center", "bottom-right"]
+        }
+      }
+    }
+  }
+}

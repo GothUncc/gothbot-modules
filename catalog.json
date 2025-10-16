@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "lastUpdated": "2025-10-16T03:30:00Z",
+  "version": "1.0.1",
+  "lastUpdated": "2025-10-16T12:00:00Z",
   "description": "Official GothBot Module Marketplace",
   "modules": [
     {
@@ -12,7 +12,7 @@
       "category": "overlay",
       "tags": ["alerts", "overlay", "obs", "notifications", "stream", "twitch", "kick", "youtube"],
       "icon": "🔔",
-      "downloadUrl": "https://raw.githubusercontent.com/GothUncc/gothomationbotV2/main/modules/alerts",
+      "downloadUrl": "https://raw.githubusercontent.com/GothUncc/gothomationbotV2/main/modules/alerts/index.js",
       "installType": "bundled",
       "screenshots": [],
       "features": [

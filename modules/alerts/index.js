@@ -266,7 +266,100 @@ async function testAlert(ctx, type = 'follow') {
 module.exports = {
   // Required metadata
   name: 'Alert System',
-  version: '1.0.0',
+  version: '1.0.1',
+  
+  // Configuration schema
+  configSchema: {
+    type: 'object',
+    properties: {
+      enableFollowAlerts: {
+        type: 'boolean',
+        title: 'Enable Follow Alerts',
+        description: 'Show alerts when someone follows',
+        default: true
+      },
+      enableSubscribeAlerts: {
+        type: 'boolean',
+        title: 'Enable Subscribe Alerts',
+        description: 'Show alerts for subscriptions',
+        default: true
+      },
+      enableRaidAlerts: {
+        type: 'boolean',
+        title: 'Enable Raid Alerts',
+        description: 'Show alerts for incoming raids',
+        default: true
+      },
+      enableDonationAlerts: {
+        type: 'boolean',
+        title: 'Enable Donation Alerts',
+        description: 'Show alerts for donations/tips',
+        default: true
+      },
+      enableCheerAlerts: {
+        type: 'boolean',
+        title: 'Enable Cheer Alerts',
+        description: 'Show alerts for bits/cheers',
+        default: true
+      },
+      alertDuration: {
+        type: 'number',
+        title: 'Alert Duration (seconds)',
+        description: 'How long each alert displays',
+        default: 5,
+        minimum: 1,
+        maximum: 30
+      },
+      animationStyle: {
+        type: 'string',
+        title: 'Animation Style',
+        description: 'Choose alert animation style',
+        default: 'slideIn',
+        enum: ['slideIn', 'fadeIn', 'bounceIn', 'zoomIn', 'spinIn']
+      },
+      soundEnabled: {
+        type: 'boolean',
+        title: 'Enable Alert Sounds',
+        description: 'Play sound effects with alerts',
+        default: true
+      },
+      soundVolume: {
+        type: 'number',
+        title: 'Sound Volume',
+        description: 'Alert sound volume (0-100)',
+        default: 70,
+        minimum: 0,
+        maximum: 100
+      },
+      ttsEnabled: {
+        type: 'boolean',
+        title: 'Enable Text-to-Speech',
+        description: 'Read alert messages with TTS',
+        default: false
+      },
+      minRaidViewers: {
+        type: 'number',
+        title: 'Minimum Raid Viewers',
+        description: 'Only show raid alerts above this viewer count',
+        default: 2,
+        minimum: 1
+      },
+      minDonationAmount: {
+        type: 'number',
+        title: 'Minimum Donation Amount',
+        description: 'Only show donation alerts above this amount',
+        default: 1,
+        minimum: 0
+      },
+      minCheerBits: {
+        type: 'number',
+        title: 'Minimum Cheer Bits',
+        description: 'Only show cheer alerts above this bit count',
+        default: 100,
+        minimum: 1
+      }
+    }
+  },
   
   // Lifecycle hooks
   initialize: async function(context) {

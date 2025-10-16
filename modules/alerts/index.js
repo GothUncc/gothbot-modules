@@ -16,7 +16,7 @@ let moduleContext = null;
  * Module initialization function
  * Called when the module is loaded
  */
-export async function onLoad(ctx) {
+async function onLoad(ctx) {
   moduleContext = ctx;
   
   // Get module configuration
@@ -40,7 +40,7 @@ export async function onLoad(ctx) {
  * Module unload function
  * Called when the module is disabled or unloaded
  */
-export async function onUnload(ctx) {
+async function onUnload(ctx) {
   ctx.logger.info('Alert System module unloaded');
   
   // Clear alert queue
@@ -57,7 +57,7 @@ export async function onUnload(ctx) {
  * Configuration update handler
  * Called when module config is updated via UI
  */
-export async function onConfigUpdate(ctx, newConfig) {
+async function onConfigUpdate(ctx, newConfig) {
   ctx.logger.info('Alert System config updated', { newConfig });
   
   // Re-subscribe to events with new config
@@ -257,7 +257,7 @@ async function processAlertQueue() {
 /**
  * Test alert endpoint - for module developers to test alerts
  */
-export async function testAlert(ctx, type = 'follow') {
+async function testAlert(ctx, type = 'follow') {
   const testAlerts = {
     follow: {
       type: 'follow',
@@ -318,3 +318,11 @@ export async function testAlert(ctx, type = 'follow') {
     alert
   };
 }
+
+// Export functions using CommonJS format for isolated-vm compatibility
+module.exports = {
+  onLoad,
+  onUnload,
+  onConfigUpdate,
+  testAlert
+};

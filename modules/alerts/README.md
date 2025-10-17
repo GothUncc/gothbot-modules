@@ -12,7 +12,44 @@ Multi-platform stream alerts with custom animations, sounds, and TTS support.
 - ✅ **Smart Queue** - Prevents alert overlap with queue management
 - ✅ **Configurable** - Extensive customization via web UI
 - ✅ **Test Mode** - Preview alerts without real events
-- ✅ **OBS Integration** - Easy browser source setup
+- ✅ **OBS Integration** - Native OBS playback + browser source fallback
+
+## OBS Native Playback (v2.0.139+)
+
+The Alert System module can now trigger **native OBS playback** instead of just browser overlays!
+
+### Setup
+
+1. Ensure OBS Master Core is configured:
+   - Connect GothBot to your OBS instance via WebSocket
+   - Configure in Settings → OBS
+   - Test connection with the test button
+
+2. Alert System will automatically detect OBS:
+   - If OBS is connected and ready, alerts trigger native playback
+   - If OBS unavailable, falls back to browser overlay (no configuration needed)
+   - Zero code changes required!
+
+### How It Works
+
+```
+Follow/Subscribe/Raid Event
+  ↓
+Alert System detects event
+  ↓
+Checks if context.obsApi available
+  ├─ YES → Triggers `context.obsApi.playMedia()`
+  │        Native OBS playback with automatic cleanup
+  └─ NO → Falls back to browser overlay
+         Displays in traditional browser source
+```
+
+### Benefits
+
+- **Native Playback**: Media plays directly from OBS, not browser
+- **Better Performance**: Lower latency, higher reliability
+- **Automatic Cleanup**: Sources auto-delete after playback
+- **Fallback Safety**: Always works, even without OBS
 
 ## Installation
 

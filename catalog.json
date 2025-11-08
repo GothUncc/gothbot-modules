@@ -1,8 +1,50 @@
 {
-  "version": "1.0.3",
-  "lastUpdated": "2025-10-16T13:35:00Z",
+  "version": "1.0.4",
+  "lastUpdated": "2025-11-08T18:00:00Z",
   "description": "Official GothBot Module Marketplace",
   "modules": [
+    {
+      "id": "obs-control",
+      "name": "OBS Control & Dynamic Overlays",
+      "version": "1.0.0",
+      "description": "Comprehensive OBS WebSocket control module providing dynamic source management, automated alert systems, and event-driven automation. Foundation for all overlay-based features.",
+      "author": "GothBot Team",
+      "category": "infrastructure",
+      "tags": ["obs", "overlay", "automation", "websocket", "infrastructure", "alerts", "scenes"],
+      "icon": "🎥",
+      "downloadUrl": "https://raw.githubusercontent.com/GothUncc/gothomationbotV2/main/modules/obs-control",
+      "installType": "bundled",
+      "screenshots": [],
+      "features": [
+        "OBS WebSocket connection with auto-reconnect",
+        "Dynamic alert source creation and management",
+        "Event-driven automation engine",
+        "Scene management and switching",
+        "Source control (show/hide/create)",
+        "Alert queue system with concurrent limits",
+        "7+ automation action types",
+        "Media playback control",
+        "Real-time streaming and recording stats",
+        "Module Context API for other modules"
+      ],
+      "requirements": {
+        "botVersion": ">=2.0.116",
+        "moduleFramework": ">=1.0.0",
+        "external": ["OBS Studio 28+ with WebSocket enabled"]
+      },
+      "documentation": "https://github.com/GothUncc/gothomationbotV2/blob/main/modules/obs-control/README.md",
+      "quickStart": "https://github.com/GothUncc/gothomationbotV2/blob/main/modules/obs-control/QUICKSTART.md",
+      "repository": "https://github.com/GothUncc/gothomationbotV2",
+      "license": "MIT",
+      "verified": true,
+      "official": true,
+      "downloads": 0,
+      "rating": 5.0,
+      "createdAt": "2025-11-08T18:00:00Z",
+      "updatedAt": "2025-11-08T18:00:00Z",
+      "dependencies": [],
+      "dependents": ["alerts"]
+    },
     {
       "id": "alerts",
       "name": "Alert System",

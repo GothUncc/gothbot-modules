@@ -8,6 +8,28 @@ This repository hosts the official catalog of modules available for GothBot. The
 
 ## Available Modules
 
+### 🎥 OBS Control & Dynamic Overlays (v1.0.0) - **NEW!**
+
+Foundation module for all OBS integration and overlay features.
+
+**Features:**
+- OBS WebSocket connection with auto-reconnect
+- Dynamic alert source creation and management
+- Event-driven automation engine
+- Scene management and switching
+- Alert queue system with concurrent limits
+- 7+ automation action types
+- Real-time streaming and recording stats
+- Module Context API for other modules
+
+**Requirements:** OBS Studio 28+ with WebSocket enabled
+
+**Installation:** Available in GothBot v2.0.116+
+
+[Documentation](https://github.com/GothUncc/gothomationbotV2/blob/main/modules/obs-control/README.md) | [Quick Start](https://github.com/GothUncc/gothomationbotV2/blob/main/modules/obs-control/QUICKSTART.md)
+
+---
+
 ### 🔔 Alert System (v1.0.0)
 
 Multi-platform stream alerts with custom animations and sounds.

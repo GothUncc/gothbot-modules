@@ -12,10 +12,11 @@ This is the **official module marketplace** for [GothomationBot v2.0](https://gi
 
 ```
 gothbot-modules/
-├── catalog.json         # Module registry database
-├── README.md           # Public-facing marketplace documentation
-├── architecture.md     # Module development guide & system architecture
-└── claude.md          # This file - AI assistant instructions
+├── catalog.json                      # Module registry database
+├── README.md                         # Public-facing marketplace documentation
+├── architecture.md                   # Module development guide & system architecture
+├── claude.md                         # This file - AI assistant instructions
+└── MODULE_36_IMPLEMENTATION_PLAN.md  # OBS Control module implementation plan
 ```
 
 ## Key Files
@@ -64,9 +65,12 @@ Technical guide for module developers containing:
 - verified: true only after review process
 
 ### Version Management
-- catalog.json has its own version (currently 1.0.0)
+- catalog.json has its own version (currently 1.0.1)
 - Individual modules have independent versions
 - Update catalog version on breaking schema changes
+- Increment patch version (x.x.X) when adding new modules
+- Increment minor version (x.X.0) when changing module schema
+- Increment major version (X.0.0) for breaking changes
 
 ## AI Assistant Guidelines
 
@@ -101,14 +105,81 @@ Technical guide for module developers containing:
 
 ## Current State
 
-- **Catalog Version**: 1.0.0
-- **Total Modules**: 1 (Alert System)
-- **Last Updated**: 2025-10-16
-- **Repository Status**: Newly initialized, ready for expansion
+- **Catalog Version**: 1.0.1
+- **Total Modules**: 2 (OBS Control, Alert System)
+- **Last Updated**: 2025-11-08
+- **Repository Status**: Active development, expanding module ecosystem
 
-## Next Steps
+## Available Modules
 
-1. Populate architecture.md with module development guide
-2. Prepare for additional module submissions
-3. Establish module review and verification process
-4. Consider adding CI/CD for catalog validation
+### Infrastructure Modules
+1. **obs-control** (v1.0.0) - OBS Control & Dynamic Overlays
+   - Foundation module for all OBS integration
+   - Dynamic alert engine, automation, scene management
+   - Required by: alerts module (future v2.0)
+
+### Overlay Modules
+2. **alerts** (v1.0.0) - Alert System (Proof of Concept)
+   - Multi-platform stream alerts
+   - Will be superseded by alerts v2.0 using obs-control
+
+## Development Workflow
+
+### Local Development
+When developing modules locally (on Windows dev machine):
+1. Create module in `GothOmationBot2.0/modules/module-name/`
+2. Test locally with `npm run dev`
+3. Commit to GothBot repository
+4. Add to `catalog.json` in this repository
+5. Update `README.md` with module details
+6. Test module appears in marketplace
+
+### Production Deployment
+GothBot runs on production Unraid server:
+1. Push code to GitHub from local dev machine
+2. Pull latest on Unraid server
+3. Restart GothBot container
+4. Module marketplace updates automatically
+
+## Module Categories
+
+- **infrastructure** - Core system modules (OBS Control, AI Framework)
+- **overlay** - Stream overlays (Alerts, Goal Tracker, Chat Overlay)
+- **integration** - External service integrations (Discord, Spotify, Fourthwall)
+- **chat** - Chat commands and interactions
+- **automation** - Automated tasks and workflows
+- **analytics** - Stats, tracking, and reporting
+- **utility** - Helper tools and utilities
+
+## Priority Modules in Development
+
+Based on issue analysis and dependencies:
+1. ✅ **#36 OBS Control** - Complete (Phase 1)
+2. **#37 AI/ML Framework** - Foundation for AI modules
+3. **#4 Chat Commands** - Foundation for chat-based features
+4. **#10 Stream Markers** - Quick win, content creator value
+5. **Alert System v2.0** - Rewrite using OBS Control
+
+## Notes for AI Assistants
+
+### Module Development Pattern
+When building new modules, follow this pattern:
+1. Use wrapping approach for existing services (like OBS Control wraps OBSMasterCore)
+2. Create comprehensive documentation (README.md, QUICKSTART.md)
+3. Include configuration schema in package.json
+4. Expose public API via `context.moduleApi` for other modules
+5. Implement proper lifecycle hooks (initialize, start, stop, shutdown)
+
+### Testing Before Production
+- Always test locally before pushing to production server
+- Use `npm run dev` for local testing
+- Verify module loads and connects properly
+- Test module interactions and dependencies
+- Check logs for errors or warnings
+
+### Git Workflow
+Two repositories to manage:
+1. **gothbot-modules** - Marketplace catalog (this repo)
+2. **gothomationbotV2** - Main bot code and module implementations
+
+Both must be updated and pushed for new modules to appear.

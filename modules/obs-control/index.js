@@ -550,40 +550,25 @@ module.exports = {
   },
 
   /**
-   * Start module services
-   */
-  start: async function(context) {
-    context.logger.info('OBS Control module starting');
-    
-    // Connection is handled in initialize
-    // Services are ready to use
-  },
-
-  /**
    * Stop module services
    */
-  stop: async function(context) {
-    context.logger.info('OBS Control module stopping');
+  stop: function() {
+    if (moduleContext) {
+      moduleContext.logger.info('OBS Control module stopping');
+    }
     
     // Cleanup automation and alerts
     if (automationEngine) {
-      await automationEngine.cleanup();
+      automationEngine.cleanup();
     }
 
     if (alertEngine) {
-      await alertEngine.cleanup();
+      alertEngine.cleanup();
     }
-  },
-
-  /**
-   * Shutdown and cleanup
-   */
-  shutdown: async function(context) {
-    context.logger.info('OBS Control module shutting down');
     
     // Disconnect from OBS
     if (obsServices) {
-      await obsServices.disconnect();
+      obsServices.disconnect();
     }
     
     obsServices = null;

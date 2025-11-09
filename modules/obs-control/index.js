@@ -201,7 +201,7 @@ class OBSModuleCore {
 }
 
 // ============================================================================
-// Dynamic Alert Engine (Simplified)
+// Dynamic Alert Engine
 // ============================================================================
 
 class DynamicAlertEngine {
@@ -211,36 +211,257 @@ class DynamicAlertEngine {
     this.activeAlerts = new Map();
     this.alertQueue = [];
     this.processing = false;
+    this.maxConcurrentAlerts = 3;
   }
 
   async showAlert(config) {
-    const alertId = `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    this.context.logger.info('Alert requested', { id: alertId, type: config.type });
-    
-    // For now, just log - full implementation requires bot integration
-    this.context.logger.warn('Alert system requires full OBS integration');
-    
+    const alertId = 'alert_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+    const alert = {
+      id: alertId,
+      type: config.type || 'generic',
+      sourceName: 'DynamicAlert_' + alertId,
+      sceneName: config.scene || null,
+      duration: config.duration || 5000,
+      url: config.url || this.buildAlertUrl(config),
+      width: config.width || 1920,
+      height: config.height || 1080,
+      config: config
+    };
+
+    this.context.logger.info('Alert queued', {
+      id: alertId,
+      type: alert.type,
+      queueSize: this.alertQueue.length + 1
+    });
+
+    this.alertQueue.push(alert);
+
+    if (!this.processing) {
+      this.processQueue();
+    }
+
     return alertId;
+  }
+
+  buildAlertUrl(config) {
+    const params = [];
+    params.push('type=' + encodeURIComponent(config.type || 'generic'));
+    params.push('username=' + encodeURIComponent(config.username || 'Viewer'));
+    params.push('message=' + encodeURIComponent(config.message || ''));
+    params.push('amount=' + encodeURIComponent(config.amount || ''));
+    params.push('duration=' + encodeURIComponent(config.duration || 5000));
+    
+    return 'http://localhost:3000/overlay/alert?' + params.join('&');
+  }
+
+  async processQueue() {
+    const self = this;
+    
+    if (self.processing || self.alertQueue.length === 0) {
+      return;
+    }
+
+    if (self.activeAlerts.size >= self.maxConcurrentAlerts) {
+      self.context.logger.debug('Max concurrent alerts reached, waiting', {
+        active: self.activeAlerts.size,
+        queued: self.alertQueue.length
+      });
+      
+      setTimeout(function() { self.processQueue(); }, 500);
+      return;
+    }
+
+    self.processing = true;
+    const alert = self.alertQueue.shift();
+
+    try {
+      if (!alert.sceneName) {
+        alert.sceneName = await self.obsCore.getCurrentProgramScene();
+      }
+
+      self.context.logger.info('Displaying alert', {
+        id: alert.id,
+        type: alert.type,
+        scene: alert.sceneName,
+        duration: alert.duration
+      });
+
+      await self.obsCore.createBrowserSource(
+        alert.sceneName,
+        alert.sourceName,
+        {
+          url: alert.url,
+          width: alert.width,
+          height: alert.height,
+          fps: 60,
+          shutdown: true,
+          restart_when_active: false
+        }
+      );
+
+      await self.obsCore.setSourceVisibility(alert.sceneName, alert.sourceName, true);
+
+      self.activeAlerts.set(alert.id, {
+        id: alert.id,
+        type: alert.type,
+        sourceName: alert.sourceName,
+        sceneName: alert.sceneName,
+        duration: alert.duration,
+        url: alert.url,
+        width: alert.width,
+        height: alert.height,
+        config: alert.config,
+        startTime: Date.now(),
+        timeout: null
+      });
+
+      const timeout = setTimeout(function() {
+        self.hideAlert(alert.id);
+      }, alert.duration);
+
+      self.activeAlerts.get(alert.id).timeout = timeout;
+
+      self.context.logger.info('Alert displayed successfully', {
+        id: alert.id,
+        activeCount: self.activeAlerts.size
+      });
+
+    } catch (error) {
+      self.context.logger.error('Failed to display alert', {
+        id: alert.id,
+        error: error.message,
+        stack: error.stack
+      });
+    } finally {
+      self.processing = false;
+
+      if (self.alertQueue.length > 0) {
+        setTimeout(function() { self.processQueue(); }, 100);
+      }
+    }
+  }
+
+  async hideAlert(alertId) {
+    const alert = this.activeAlerts.get(alertId);
+    if (!alert) {
+      this.context.logger.warn('Alert not found for hiding', { alertId: alertId });
+      return;
+    }
+
+    try {
+      if (alert.timeout) {
+        clearTimeout(alert.timeout);
+      }
+
+      this.context.logger.info('Hiding alert', {
+        id: alertId,
+        displayTime: Date.now() - alert.startTime
+      });
+
+      await this.obsCore.setSourceVisibility(alert.sceneName, alert.sourceName, false);
+
+      await new Promise(function(resolve) { setTimeout(resolve, 500); });
+
+      await this.obsCore.removeSceneItem(alert.sceneName, alert.sourceName);
+
+      this.activeAlerts.delete(alertId);
+
+      this.context.logger.info('Alert removed successfully', {
+        id: alertId,
+        remainingActive: this.activeAlerts.size
+      });
+
+      if (this.alertQueue.length > 0) {
+        this.processQueue();
+      }
+
+    } catch (error) {
+      this.context.logger.error('Failed to hide alert', {
+        id: alertId,
+        error: error.message,
+        stack: error.stack
+      });
+
+      this.activeAlerts.delete(alertId);
+    }
+  }
+
+  async createDynamicSource(config) {
+    const sourceId = 'dynamic_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    const sourceName = config.name || sourceId;
+    const sceneName = config.scene || await this.obsCore.getCurrentProgramScene();
+
+    try {
+      switch (config.type) {
+        case 'browser':
+          await this.obsCore.createBrowserSource(sceneName, sourceName, config.settings);
+          break;
+
+        case 'image':
+          await this.obsCore.createImageSource(sceneName, sourceName, config.settings);
+          break;
+
+        case 'text':
+          await this.obsCore.createTextSource(sceneName, sourceName, config.settings);
+          break;
+
+        case 'media':
+          await this.obsCore.createMediaSource(sceneName, sourceName, config.settings);
+          break;
+
+        default:
+          throw new Error('Unsupported source type: ' + config.type);
+      }
+
+      this.context.logger.info('Dynamic source created', {
+        id: sourceId,
+        name: sourceName,
+        type: config.type,
+        scene: sceneName
+      });
+
+      return sourceId;
+
+    } catch (error) {
+      this.context.logger.error('Failed to create dynamic source', {
+        error: error.message,
+        config: config
+      });
+      throw error;
+    }
   }
 
   getQueueStatus() {
     return {
       activeAlerts: this.activeAlerts.size,
       queuedAlerts: this.alertQueue.length,
+      maxConcurrent: this.maxConcurrentAlerts,
       processing: this.processing
     };
   }
 
   async cleanup() {
+    this.context.logger.info('Cleaning up alert engine', {
+      activeAlerts: this.activeAlerts.size,
+      queuedAlerts: this.alertQueue.length
+    });
+
     this.alertQueue = [];
-    this.activeAlerts.clear();
+
+    const alertIds = Array.from(this.activeAlerts.keys());
+    for (let i = 0; i < alertIds.length; i++) {
+      await this.hideAlert(alertIds[i]);
+    }
+
     this.processing = false;
+
+    this.context.logger.info('Alert engine cleanup complete');
   }
 }
 
 // ============================================================================
-// Automation Engine (Simplified)
+// Automation Engine
 // ============================================================================
 
 class AutomationEngine {
@@ -248,29 +469,283 @@ class AutomationEngine {
     this.obsCore = obsCore;
     this.context = context;
     this.rules = new Map();
+    this.eventHandlers = new Map();
   }
 
   registerRule(rule) {
-    const ruleId = rule.id || `rule_${Date.now()}`;
-    this.rules.set(ruleId, rule);
-    this.context.logger.info('Automation rule registered', { ruleId, eventType: rule.eventType });
+    const ruleId = rule.id || 'rule_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+    if (!rule.eventType) {
+      throw new Error('Rule must have an eventType');
+    }
+    if (!rule.actions || !Array.isArray(rule.actions)) {
+      throw new Error('Rule must have actions array');
+    }
+
+    this.rules.set(ruleId, {
+      id: ruleId,
+      eventType: rule.eventType,
+      conditions: rule.conditions,
+      actions: rule.actions,
+      enabled: rule.enabled !== false,
+      stopOnError: rule.stopOnError,
+      createdAt: Date.now()
+    });
+
+    const self = this;
+    const handler = async function(event) {
+      await self.executeRule(ruleId, event);
+    };
+
+    this.context.on(rule.eventType, handler);
+    this.eventHandlers.set(ruleId, { eventType: rule.eventType, handler: handler });
+
+    this.context.logger.info('Automation rule registered', {
+      ruleId: ruleId,
+      eventType: rule.eventType,
+      actionCount: rule.actions.length
+    });
+
     return ruleId;
   }
 
   unregisterRule(ruleId) {
-    const deleted = this.rules.delete(ruleId);
-    if (deleted) {
-      this.context.logger.info('Automation rule unregistered', { ruleId });
+    const rule = this.rules.get(ruleId);
+    if (!rule) {
+      this.context.logger.warn('Rule not found for unregistration', { ruleId: ruleId });
+      return false;
     }
-    return deleted;
+
+    const handlerInfo = this.eventHandlers.get(ruleId);
+    if (handlerInfo) {
+      this.context.off(handlerInfo.eventType, handlerInfo.handler);
+      this.eventHandlers.delete(ruleId);
+    }
+
+    this.rules.delete(ruleId);
+
+    this.context.logger.info('Automation rule unregistered', { ruleId: ruleId });
+    return true;
+  }
+
+  async executeRule(ruleId, event) {
+    const rule = this.rules.get(ruleId);
+    if (!rule) {
+      return;
+    }
+
+    if (!rule.enabled) {
+      return;
+    }
+
+    this.context.logger.debug('Evaluating automation rule', {
+      ruleId: ruleId,
+      eventType: event.type,
+      hasConditions: !!rule.conditions
+    });
+
+    if (rule.conditions && !this.evaluateConditions(rule.conditions, event)) {
+      this.context.logger.debug('Rule conditions not met', { ruleId: ruleId });
+      return;
+    }
+
+    this.context.logger.info('Executing automation rule', {
+      ruleId: ruleId,
+      actionCount: rule.actions.length
+    });
+
+    for (let i = 0; i < rule.actions.length; i++) {
+      const action = rule.actions[i];
+      
+      try {
+        await this.executeAction(action, event);
+      } catch (error) {
+        this.context.logger.error('Automation action failed', {
+          ruleId: ruleId,
+          actionIndex: i,
+          actionType: action.type,
+          error: error.message,
+          stack: error.stack
+        });
+
+        if (rule.stopOnError) {
+          break;
+        }
+      }
+    }
+  }
+
+  async executeAction(action, event) {
+    this.context.logger.debug('Executing action', {
+      type: action.type,
+      eventType: event.type
+    });
+
+    switch (action.type) {
+      case 'switch_scene':
+        await this.obsCore.setCurrentProgramScene(action.sceneName);
+        break;
+
+      case 'show_source':
+        await this.obsCore.setSourceVisibility(
+          action.scene || await this.obsCore.getCurrentProgramScene(),
+          action.source,
+          true
+        );
+        break;
+
+      case 'hide_source':
+        await this.obsCore.setSourceVisibility(
+          action.scene || await this.obsCore.getCurrentProgramScene(),
+          action.source,
+          false
+        );
+        break;
+
+      case 'toggle_source':
+        var currentScene = await this.obsCore.getCurrentProgramScene();
+        var visible = await this.obsCore.getSourceVisibility(currentScene, action.source);
+        await this.obsCore.setSourceVisibility(currentScene, action.source, !visible);
+        break;
+
+      case 'play_media':
+        await this.obsCore.playMedia(action.source);
+        break;
+
+      case 'pause_media':
+        await this.obsCore.pauseMedia(action.source);
+        break;
+
+      case 'restart_media':
+        await this.obsCore.restartMedia(action.source);
+        break;
+
+      case 'set_filter_enabled':
+        await this.obsCore.setSourceFilterEnabled(
+          action.source,
+          action.filter,
+          action.enabled
+        );
+        break;
+
+      case 'start_streaming':
+        await this.obsCore.startStreaming();
+        break;
+
+      case 'stop_streaming':
+        await this.obsCore.stopStreaming();
+        break;
+
+      case 'start_recording':
+        await this.obsCore.startRecording();
+        break;
+
+      case 'stop_recording':
+        await this.obsCore.stopRecording();
+        break;
+
+      case 'delay':
+        await new Promise(function(resolve) { 
+          setTimeout(resolve, action.duration || 1000); 
+        });
+        break;
+
+      case 'emit_event':
+        await this.context.emit(action.eventName, {
+          data: action.data,
+          originalEvent: event
+        });
+        break;
+
+      case 'log':
+        this.context.logger.info('Automation log', {
+          message: action.message,
+          event: event.type
+        });
+        break;
+
+      default:
+        this.context.logger.warn('Unknown action type', {
+          type: action.type
+        });
+    }
+  }
+
+  evaluateConditions(conditions, event) {
+    if (conditions.platform) {
+      const platforms = Array.isArray(conditions.platform) 
+        ? conditions.platform 
+        : [conditions.platform];
+      
+      if (!platforms.includes(event.platform)) {
+        return false;
+      }
+    }
+
+    if (conditions.minViewers !== undefined && event.viewers < conditions.minViewers) {
+      return false;
+    }
+    if (conditions.minAmount !== undefined && event.amount < conditions.minAmount) {
+      return false;
+    }
+    if (conditions.minBits !== undefined && event.bits < conditions.minBits) {
+      return false;
+    }
+
+    if (conditions.maxViewers !== undefined && event.viewers > conditions.maxViewers) {
+      return false;
+    }
+    if (conditions.maxAmount !== undefined && event.amount > conditions.maxAmount) {
+      return false;
+    }
+
+    if (conditions.users) {
+      const users = Array.isArray(conditions.users) ? conditions.users : [conditions.users];
+      if (!users.includes(event.user && event.user.username)) {
+        return false;
+      }
+    }
+
+    if (conditions.custom && typeof conditions.custom === 'function') {
+      return conditions.custom(event);
+    }
+
+    return true;
   }
 
   getRules() {
     return Array.from(this.rules.values());
   }
 
+  getRule(ruleId) {
+    return this.rules.get(ruleId);
+  }
+
+  setRuleEnabled(ruleId, enabled) {
+    const rule = this.rules.get(ruleId);
+    if (!rule) {
+      return false;
+    }
+
+    rule.enabled = enabled;
+    this.context.logger.info('Rule enabled status changed', { ruleId: ruleId, enabled: enabled });
+    return true;
+  }
+
   async cleanup() {
+    this.context.logger.info('Cleaning up automation engine', {
+      ruleCount: this.rules.size
+    });
+
+    const ruleIds = Array.from(this.rules.keys());
+    for (let i = 0; i < ruleIds.length; i++) {
+      this.unregisterRule(ruleIds[i]);
+    }
+
     this.rules.clear();
+    this.eventHandlers.clear();
+
+    this.context.logger.info('Automation engine cleanup complete');
   }
 }
 

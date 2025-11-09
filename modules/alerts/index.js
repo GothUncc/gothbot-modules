@@ -1,13 +1,11 @@
 /**
  * Alert System Module
  * 
- * Multi-platform stream alerts with custom animations, sounds, and TTS support.
- * Subscribes to platform events and displays beautiful overlay alerts.
+ * Multi-platform stream alerts using OBS Control module for dynamic overlay management.
+ * Subscribes to platform events and displays alerts via OBS WebSocket.
+ * 
+ * REQUIRES: obs-control module to be installed and enabled
  */
-
-// Alert queue to prevent overlapping alerts
-const alertQueue = [];
-let isProcessingAlert = false;
 
 // Store module context globally
 let moduleContext = null;
@@ -16,250 +14,218 @@ let moduleContext = null;
  * Subscribe to platform events based on configuration
  */
 function subscribeToEvents(ctx, config) {
+  // Check if OBS Control is available
+  if (!ctx.obsApi) {
+    ctx.logger.error('OBS Control module is required but not available');
+    ctx.logger.error('Please install and enable the obs-control module first');
+    return;
+  }
+
+  ctx.logger.info('Alert System using OBS Control module');
+
   // Follow events
   if (config.enableFollowAlerts) {
-    ctx.on('follow', (event) => {
-      queueAlert({
-        type: 'follow',
-        platform: event.platform,
-        username: event.data.username,
-        displayName: event.data.displayName || event.data.username,
-        message: `${event.data.displayName || event.data.username} just followed!`,
-        timestamp: Date.now()
-      });
+    ctx.on('follow', async function(event) {
+      try {
+        await ctx.obsApi.showAlert({
+          type: 'follow',
+          username: event.data.displayName || event.data.username,
+          message: (event.data.displayName || event.data.username) + ' just followed!',
+          duration: (config.alertDuration || 5) * 1000,
+          scene: config.alertScene || null
+        });
+      } catch (error) {
+        ctx.logger.error('Failed to show follow alert', { error: error.message });
+      }
     });
   }
   
   // Subscribe events
   if (config.enableSubscribeAlerts) {
-    ctx.on('subscribe', (event) => {
-      const tier = event.data.tier || 1;
-      const months = event.data.months || 1;
-      let message = `${event.data.displayName || event.data.username} subscribed`;
-      
-      if (months > 1) {
-        message += ` for ${months} months!`;
-      } else {
-        message += '!';
+    ctx.on('subscribe', async function(event) {
+      try {
+        const tier = event.data.tier || 1;
+        const months = event.data.months || 1;
+        let message = (event.data.displayName || event.data.username) + ' subscribed';
+        
+        if (months > 1) {
+          message += ' for ' + months + ' months!';
+        } else {
+          message += '!';
+        }
+        
+        if (tier > 1) {
+          message += ' (Tier ' + tier + ')';
+        }
+        
+        await ctx.obsApi.showAlert({
+          type: 'subscribe',
+          username: event.data.displayName || event.data.username,
+          message: message,
+          tier: tier,
+          months: months,
+          duration: (config.alertDuration || 5) * 1000,
+          scene: config.alertScene || null
+        });
+      } catch (error) {
+        ctx.logger.error('Failed to show subscribe alert', { error: error.message });
       }
-      
-      if (tier > 1) {
-        message += ` (Tier ${tier})`;
-      }
-      
-      queueAlert({
-        type: 'subscribe',
-        platform: event.platform,
-        username: event.data.username,
-        displayName: event.data.displayName || event.data.username,
-        tier,
-        months,
-        message,
-        timestamp: Date.now()
-      });
     });
   }
   
   // Raid events
   if (config.enableRaidAlerts) {
-    ctx.on('raid', (event) => {
-      const viewers = event.data.viewerCount || 0;
-      queueAlert({
-        type: 'raid',
-        platform: event.platform,
-        username: event.data.username,
-        displayName: event.data.displayName || event.data.username,
-        viewers,
-        message: `${event.data.displayName || event.data.username} is raiding with ${viewers} viewers!`,
-        timestamp: Date.now()
-      });
+    ctx.on('raid', async function(event) {
+      try {
+        const viewers = event.data.viewerCount || 0;
+        
+        if (viewers >= config.minRaidViewers) {
+          await ctx.obsApi.showAlert({
+            type: 'raid',
+            username: event.data.displayName || event.data.username,
+            message: (event.data.displayName || event.data.username) + ' is raiding with ' + viewers + ' viewers!',
+            viewers: viewers,
+            duration: (config.alertDuration || 5) * 1000,
+            scene: config.alertScene || null
+          });
+        }
+      } catch (error) {
+        ctx.logger.error('Failed to show raid alert', { error: error.message });
+      }
     });
   }
   
   // Donation events
   if (config.enableDonationAlerts) {
-    ctx.on('donation', (event) => {
-      const amount = event.data.amount || 0;
-      
-      // Check minimum amount
-      if (amount >= config.minDonationAmount) {
-        const currency = event.data.currency || 'USD';
-        queueAlert({
-          type: 'donation',
-          platform: event.platform,
-          username: event.data.username,
-          displayName: event.data.displayName || event.data.username,
-          amount,
-          currency,
-          message: `${event.data.displayName || event.data.username} donated ${currency} ${amount}!`,
-          userMessage: event.data.message || '',
-          timestamp: Date.now()
-        });
+    ctx.on('donation', async function(event) {
+      try {
+        const amount = event.data.amount || 0;
+        
+        if (amount >= config.minDonationAmount) {
+          const currency = event.data.currency || 'USD';
+          await ctx.obsApi.showAlert({
+            type: 'donation',
+            username: event.data.displayName || event.data.username,
+            message: (event.data.displayName || event.data.username) + ' donated ' + currency + ' ' + amount + '!',
+            amount: amount,
+            currency: currency,
+            userMessage: event.data.message || '',
+            duration: (config.alertDuration || 5) * 1000,
+            scene: config.alertScene || null
+          });
+        }
+      } catch (error) {
+        ctx.logger.error('Failed to show donation alert', { error: error.message });
       }
     });
   }
   
   // Cheer/Bits events
   if (config.enableCheerAlerts) {
-    ctx.on('cheer', (event) => {
-      const amount = event.data.bits || event.data.amount || 0;
-      
-      // Check minimum amount
-      if (amount >= config.minCheerAmount) {
-        queueAlert({
-          type: 'cheer',
-          platform: event.platform,
-          username: event.data.username,
-          displayName: event.data.displayName || event.data.username,
-          amount,
-          message: `${event.data.displayName || event.data.username} cheered ${amount} bits!`,
-          userMessage: event.data.message || '',
-          timestamp: Date.now()
-        });
+    ctx.on('cheer', async function(event) {
+      try {
+        const amount = event.data.bits || event.data.amount || 0;
+        
+        if (amount >= config.minCheerBits) {
+          await ctx.obsApi.showAlert({
+            type: 'cheer',
+            username: event.data.displayName || event.data.username,
+            message: (event.data.displayName || event.data.username) + ' cheered ' + amount + ' bits!',
+            amount: amount,
+            userMessage: event.data.message || '',
+            duration: (config.alertDuration || 5) * 1000,
+            scene: config.alertScene || null
+          });
+        }
+      } catch (error) {
+        ctx.logger.error('Failed to show cheer alert', { error: error.message });
       }
     });
   }
 }
 
 /**
- * Add alert to queue
+ * Test alert endpoint - triggers a test alert via OBS Control
  */
-function queueAlert(alert) {
-  if (!moduleContext) return;
+async function testAlert(ctx, type) {
+  const alertType = type || 'follow';
   
-  moduleContext.logger.info('Alert queued', { alert });
-  alertQueue.push(alert);
-  
-  // Store alert in module data for overlay to fetch
-  storeAlert(alert);
-}
-
-/**
- * Store alert in database for persistence
- */
-async function storeAlert(alert) {
-  if (!moduleContext) return;
-  
-  try {
-    // Get current alerts from storage
-    const alertsData = await moduleContext.getData('alerts') || { list: [] };
-    
-    // Add new alert to list (keep last 100)
-    alertsData.list.unshift(alert);
-    if (alertsData.list.length > 100) {
-      alertsData.list = alertsData.list.slice(0, 100);
-    }
-    
-    // Store current alert for overlay to display
-    alertsData.current = alert;
-    alertsData.lastUpdate = Date.now();
-    
-    await moduleContext.setData('alerts', alertsData);
-  } catch (error) {
-    moduleContext.logger.error('Failed to store alert', { error: error.message });
+  if (!ctx.obsApi) {
+    return {
+      success: false,
+      error: 'OBS Control module not available'
+    };
   }
-}
 
-/**
- * Process alert queue (prevent overlapping alerts)
- */
-async function processAlertQueue() {
-  if (!moduleContext) return;
+  const config = await ctx.getConfig();
   
-  if (isProcessingAlert || alertQueue.length === 0) {
-    setTimeout(processAlertQueue, 500);
-    return;
-  }
-  
-  isProcessingAlert = true;
-  const alert = alertQueue.shift();
-  
-  try {
-    // Get config for alert duration
-    const config = await moduleContext.getConfig();
-    const duration = (config.alertDuration || 5) * 1000;
-    
-    // Mark alert as active
-    await moduleContext.setData('currentAlert', alert);
-    
-    moduleContext.logger.info('Displaying alert', { alert });
-    
-    // Wait for alert duration
-    await new Promise(resolve => setTimeout(resolve, duration));
-    
-    // Clear current alert
-    await moduleContext.setData('currentAlert', null);
-  } catch (error) {
-    moduleContext.logger.error('Error processing alert', { error: error.message });
-  } finally {
-    isProcessingAlert = false;
-    setTimeout(processAlertQueue, 500);
-  }
-}
-
-/**
- * Test alert endpoint - for module developers to test alerts
- */
-async function testAlert(ctx, type = 'follow') {
   const testAlerts = {
     follow: {
       type: 'follow',
-      platform: 'twitch',
-      username: 'testuser',
-      displayName: 'TestUser',
-      message: 'TestUser just followed!',
-      timestamp: Date.now()
+      username: 'TestFollower',
+      message: 'TestFollower just followed!',
+      duration: (config.alertDuration || 5) * 1000
     },
     subscribe: {
       type: 'subscribe',
-      platform: 'twitch',
-      username: 'testuser',
-      displayName: 'TestUser',
+      username: 'TestSubscriber',
+      message: 'TestSubscriber subscribed!',
       tier: 1,
       months: 1,
-      message: 'TestUser subscribed!',
-      timestamp: Date.now()
+      duration: (config.alertDuration || 5) * 1000
     },
     raid: {
       type: 'raid',
-      platform: 'twitch',
-      username: 'testuser',
-      displayName: 'TestUser',
-      viewers: 42,
-      message: 'TestUser is raiding with 42 viewers!',
-      timestamp: Date.now()
+      username: 'TestRaider',
+      message: 'TestRaider is raiding with 50 viewers!',
+      viewers: 50,
+      duration: (config.alertDuration || 5) * 1000
     },
     donation: {
       type: 'donation',
-      platform: 'streamlabs',
-      username: 'testuser',
-      displayName: 'TestUser',
+      username: 'TestDonor',
+      message: 'TestDonor donated USD 5.00!',
       amount: 5.00,
       currency: 'USD',
-      message: 'TestUser donated USD 5.00!',
-      userMessage: 'Love the stream!',
-      timestamp: Date.now()
+      userMessage: 'Great stream!',
+      duration: (config.alertDuration || 5) * 1000
     },
     cheer: {
       type: 'cheer',
-      platform: 'twitch',
-      username: 'testuser',
-      displayName: 'TestUser',
+      username: 'TestCheerer',
+      message: 'TestCheerer cheered 100 bits!',
       amount: 100,
-      message: 'TestUser cheered 100 bits!',
-      userMessage: 'Poggers!',
-      timestamp: Date.now()
+      userMessage: 'Love the content!',
+      duration: (config.alertDuration || 5) * 1000
     }
   };
   
-  const alert = testAlerts[type] || testAlerts.follow;
-  queueAlert(alert);
+  const alertConfig = testAlerts[alertType] || testAlerts.follow;
   
-  return {
-    success: true,
-    message: `Test ${type} alert queued`,
-    alert
-  };
+  try {
+    const alertId = await ctx.obsApi.showAlert(alertConfig);
+    
+    ctx.logger.info('Test alert triggered', {
+      type: alertType,
+      alertId: alertId
+    });
+    
+    return {
+      success: true,
+      message: 'Test ' + alertType + ' alert triggered',
+      alertId: alertId
+    };
+  } catch (error) {
+    ctx.logger.error('Failed to trigger test alert', {
+      type: alertType,
+      error: error.message
+    });
+    
+    return {
+      success: false,
+      error: error.message
+    };
+  }
 }
 
 // Export module instance using CommonJS format for isolated-vm compatibility
@@ -357,6 +323,13 @@ module.exports = {
         description: 'Only show cheer alerts above this bit count',
         default: 100,
         minimum: 1
+      },
+      alertScene: {
+        type: 'string',
+        title: 'Alert Scene',
+        description: 'OBS scene name for alerts (leave empty for current scene)',
+        default: '',
+        required: false
       }
     }
   },
@@ -368,13 +341,17 @@ module.exports = {
     // Get module configuration
     const config = await context.getConfig();
     
-    context.logger.info('Alert System module initialized', { config });
+    // Check if OBS Control is available
+    if (!context.obsApi) {
+      context.logger.error('Alert System requires OBS Control module');
+      context.logger.error('Please install and enable obs-control module first');
+      throw new Error('OBS Control module dependency not met');
+    }
+    
+    context.logger.info('Alert System module initialized with OBS Control', { config });
     
     // Subscribe to platform events
     subscribeToEvents(context, config);
-    
-    // Start alert queue processor
-    processAlertQueue();
   },
   
   stop: function() {
@@ -382,9 +359,7 @@ module.exports = {
       moduleContext.logger.info('Alert System module stopped');
     }
     
-    // Clear alert queue
-    alertQueue.length = 0;
-    isProcessingAlert = false;
+    moduleContext = null;
   },
   
   // Custom methods for testing

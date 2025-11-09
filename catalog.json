@@ -48,8 +48,8 @@
     {
       "id": "alerts",
       "name": "Alert System",
-      "version": "1.0.1",
-      "description": "Multi-platform stream alerts with custom animations, sounds, and TTS support. Display beautiful alerts for follows, subscriptions, raids, donations, and cheers.",
+      "version": "2.0.0",
+      "description": "Multi-platform stream alerts using OBS Control for dynamic overlay management. Display beautiful alerts for follows, subscriptions, raids, donations, and cheers with direct OBS WebSocket integration.",
       "author": "GothBot Team",
       "category": "overlay",
       "tags": ["alerts", "overlay", "obs", "notifications", "stream", "twitch", "kick", "youtube"],
@@ -60,19 +60,20 @@
       "features": [
         "Multi-platform support (Twitch, Kick, YouTube)",
         "5 alert types (Follow, Subscribe, Raid, Donation, Cheer)",
-        "5 animation styles (Slide, Fade, Bounce, Zoom, Confetti)",
-        "Custom sound effects with volume control",
-        "Optional Text-to-Speech support",
-        "Smart queue management prevents overlaps",
-        "OBS browser source integration",
-        "17+ configuration options",
+        "Direct OBS WebSocket integration via OBS Control",
+        "Dynamic browser source creation and management",
+        "Alert queue system with concurrent limits",
+        "Configurable alert duration and scene",
         "Test mode for previewing alerts",
-        "Minimum amount thresholds for donations/cheers"
+        "Minimum amount thresholds for donations/cheers",
+        "Minimum raid viewer threshold",
+        "Automatic cleanup of completed alerts"
       ],
       "requirements": {
         "botVersion": ">=2.0.116",
         "moduleFramework": ">=1.0.0"
       },
+      "dependencies": ["obs-control"],
       "documentation": "https://github.com/GothUncc/gothbot-modules/blob/main/modules/alerts/README.md",
       "quickStart": "https://github.com/GothUncc/gothomationbotV2/blob/main/ALERT_SYSTEM_QUICKSTART.md",
       "repository": "https://github.com/GothUncc/gothbot-modules",
@@ -82,7 +83,7 @@
       "downloads": 0,
       "rating": 5.0,
       "createdAt": "2025-10-16T00:00:00Z",
-      "updatedAt": "2025-10-16T00:00:00Z"
+      "updatedAt": "2025-11-09T01:00:00Z"
     }
   ]
 }

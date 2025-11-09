@@ -32,9 +32,9 @@
         "moduleFramework": ">=1.0.0",
         "external": ["OBS Studio 28+ with WebSocket enabled"]
       },
-      "documentation": "https://github.com/GothUncc/gothomationbotV2/blob/main/modules/obs-control/README.md",
-      "quickStart": "https://github.com/GothUncc/gothomationbotV2/blob/main/modules/obs-control/QUICKSTART.md",
-      "repository": "https://github.com/GothUncc/gothomationbotV2",
+      "documentation": "https://github.com/GothUncc/gothbot-modules/blob/main/modules/obs-control/README.md",
+      "quickStart": "https://github.com/GothUncc/gothbot-modules/blob/main/modules/obs-control/QUICKSTART.md",
+      "repository": "https://github.com/GothUncc/gothbot-modules",
       "license": "MIT",
       "verified": true,
       "official": true,

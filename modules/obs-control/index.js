@@ -278,15 +278,162 @@ class AutomationEngine {
 // Main Module Export
 // ============================================================================
 
+// Module-level state (cannot use 'this' in isolated-vm)
+let obsServices = null;
+let alertEngine = null;
+let automationEngine = null;
+let isConnected = false;
+let moduleContext = null;
+
+/**
+ * Setup default automation examples
+ */
+function setupDefaultAutomations(context) {
+  // Example: Scene switch on large raid
+  automationEngine.registerRule({
+    id: 'large-raid-celebration',
+    eventType: 'raid',
+    conditions: {
+      minViewers: 50
+    },
+    actions: [
+      { type: 'log', message: 'Large raid detected!' }
+    ]
+  });
+
+  context.logger.info('Default automations registered');
+}
+
+/**
+ * Get public API for other modules
+ */
+function getPublicAPI(context) {
+  return {
+    // Connection status
+    isConnected: function() { return isConnected; },
+
+    // Scene management
+    getScenes: async function() {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.getSceneList();
+    },
+    
+    getCurrentScene: async function() {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.getCurrentProgramScene();
+    },
+    
+    setScene: async function(sceneName) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.setCurrentProgramScene(sceneName);
+    },
+
+    // Alert system
+    showAlert: async function(alertConfig) {
+      if (!alertEngine) throw new Error('Alert engine not initialized');
+      return await alertEngine.showAlert(alertConfig);
+    },
+    
+    hideAlert: async function(alertId) {
+      if (!alertEngine) throw new Error('Alert engine not initialized');
+      return await alertEngine.hideAlert(alertId);
+    },
+    
+    getAlertQueueStatus: function() {
+      if (!alertEngine) throw new Error('Alert engine not initialized');
+      return alertEngine.getQueueStatus();
+    },
+
+    // Automation
+    registerAutomation: function(rule) {
+      if (!automationEngine) throw new Error('Automation engine not initialized');
+      return automationEngine.registerRule(rule);
+    },
+    
+    unregisterAutomation: function(ruleId) {
+      if (!automationEngine) throw new Error('Automation engine not initialized');
+      return automationEngine.unregisterRule(ruleId);
+    },
+    
+    executeAction: async function(action, event) {
+      if (!automationEngine) throw new Error('Automation engine not initialized');
+      return await automationEngine.executeAction(action, event || {});
+    },
+    
+    getAutomations: function() {
+      if (!automationEngine) throw new Error('Automation engine not initialized');
+      return automationEngine.getRules();
+    },
+
+    // Source control
+    showSource: async function(scene, source) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.setSourceVisibility(scene, source, true);
+    },
+    
+    hideSource: async function(scene, source) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.setSourceVisibility(scene, source, false);
+    },
+
+    // Media control
+    playMedia: async function(source) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.playMedia(source);
+    },
+    
+    pauseMedia: async function(source) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.pauseMedia(source);
+    },
+    
+    restartMedia: async function(source) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.restartMedia(source);
+    },
+
+    // Stream/Recording control
+    startStreaming: async function() {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.startStreaming();
+    },
+    
+    stopStreaming: async function() {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.stopStreaming();
+    },
+    
+    startRecording: async function() {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.startRecording();
+    },
+    
+    stopRecording: async function() {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.stopRecording();
+    },
+
+    // Statistics
+    getStats: async function() {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.getSystemStats();
+    },
+    
+    getStreamingStats: async function() {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.getStreamingStats();
+    },
+    
+    getRecordingStats: async function() {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.getRecordingStats();
+    }
+  };
+}
+
 module.exports = {
   name: 'obs-control',
   version: '1.0.0',
-
-  // Module state
-  obsServices: null,
-  alertEngine: null,
-  automationEngine: null,
-  isConnected: false,
 
   /**
    * Configuration schema
@@ -333,7 +480,9 @@ module.exports = {
   /**
    * Initialize module
    */
-  async initialize(context) {
+  initialize: async function(context) {
+    moduleContext = context;
+    
     context.logger.info('OBS Control module initializing', {
       host: context.config.host,
       port: context.config.port
@@ -341,7 +490,7 @@ module.exports = {
 
     try {
       // Get OBS service from bot if available
-      const obsServiceProvider = context.services?.obs || null;
+      const obsServiceProvider = context.services && context.services.obs ? context.services.obs : null;
       
       if (obsServiceProvider) {
         context.logger.info('Using bot OBS service');
@@ -350,7 +499,7 @@ module.exports = {
       }
 
       // Initialize OBS services wrapper
-      this.obsServices = new OBSModuleCore({
+      obsServices = new OBSModuleCore({
         host: context.config.host || 'localhost',
         port: context.config.port || 4455,
         password: context.config.password || '',
@@ -359,35 +508,35 @@ module.exports = {
         logger: context.logger
       }, context.logger, obsServiceProvider);
       
-      await this.obsServices.connect();
+      await obsServices.connect();
 
       // Setup components
-      this.alertEngine = new DynamicAlertEngine(this.obsServices, context);
-      this.automationEngine = new AutomationEngine(this.obsServices, context);
+      alertEngine = new DynamicAlertEngine(obsServices, context);
+      automationEngine = new AutomationEngine(obsServices, context);
 
       // Connection event handlers
-      this.obsServices.on('connected', () => {
-        this.isConnected = true;
+      obsServices.on('connected', function() {
+        isConnected = true;
         context.logger.info('Connected to OBS');
         context.emit('obs:connected');
       });
 
-      this.obsServices.on('disconnected', () => {
-        this.isConnected = false;
+      obsServices.on('disconnected', function() {
+        isConnected = false;
         context.logger.warn('Disconnected from OBS');
         context.emit('obs:disconnected');
       });
 
-      this.obsServices.on('error', (error) => {
-        context.logger.error('OBS error', { error: error?.message || 'Unknown error' });
+      obsServices.on('error', function(error) {
+        context.logger.error('OBS error', { error: error && error.message ? error.message : 'Unknown error' });
         context.emit('obs:error', error);
       });
 
       // Setup event-driven automation examples
-      this.setupDefaultAutomations(context);
+      setupDefaultAutomations(context);
 
       // Store API in context for other modules
-      context.obsApi = this.getPublicAPI(context);
+      context.obsApi = getPublicAPI(context);
 
       context.logger.info('OBS Control module initialized successfully');
 
@@ -403,7 +552,7 @@ module.exports = {
   /**
    * Start module services
    */
-  async start(context) {
+  start: async function(context) {
     context.logger.info('OBS Control module starting');
     
     // Connection is handled in initialize
@@ -413,196 +562,33 @@ module.exports = {
   /**
    * Stop module services
    */
-  async stop(context) {
+  stop: async function(context) {
     context.logger.info('OBS Control module stopping');
     
     // Cleanup automation and alerts
-    if (this.automationEngine) {
-      await this.automationEngine.cleanup();
+    if (automationEngine) {
+      await automationEngine.cleanup();
     }
 
-    if (this.alertEngine) {
-      await this.alertEngine.cleanup();
+    if (alertEngine) {
+      await alertEngine.cleanup();
     }
   },
 
   /**
    * Shutdown and cleanup
    */
-  async shutdown(context) {
+  shutdown: async function(context) {
     context.logger.info('OBS Control module shutting down');
     
     // Disconnect from OBS
-    if (this.obsServices) {
-      await this.obsServices.disconnect();
+    if (obsServices) {
+      await obsServices.disconnect();
     }
     
-    this.obsServices = null;
-    this.alertEngine = null;
-    this.automationEngine = null;
-    this.isConnected = false;
-  },
-
-  /**
-   * Setup default automation examples
-   */
-  setupDefaultAutomations(context) {
-    // Example: Scene switch on large raid
-    this.automationEngine.registerRule({
-      id: 'large-raid-celebration',
-      eventType: 'raid',
-      conditions: {
-        minViewers: 50
-      },
-      actions: [
-        { type: 'log', message: 'Large raid detected!' },
-        // Add more actions as needed
-      ]
-    });
-
-    context.logger.info('Default automations registered');
-  },
-
-  /**
-   * Get public API for other modules
-   */
-  getPublicAPI(context) {
-    return {
-      // Connection status
-      isConnected: () => this.isConnected,
-
-      // Scene management
-      getScenes: async () => {
-        if (!this.obsServices) throw new Error('OBS services not initialized');
-        return await this.obsServices.getSceneList();
-      },
-      
-      getCurrentScene: async () => {
-        if (!this.obsServices) throw new Error('OBS services not initialized');
-        return await this.obsServices.getCurrentProgramScene();
-      },
-      
-      setScene: async (sceneName) => {
-        if (!this.obsServices) throw new Error('OBS services not initialized');
-        return await this.obsServices.setCurrentProgramScene(sceneName);
-      },
-
-      // Dynamic source management
-      createSource: async (config) => {
-        if (!this.alertEngine) throw new Error('Alert engine not initialized');
-        return await this.alertEngine.createDynamicSource(config);
-      },
-      
-      removeSource: async (sourceId) => {
-        if (!this.alertEngine) throw new Error('Alert engine not initialized');
-        return await this.alertEngine.removeDynamicSource(sourceId);
-      },
-      
-      updateSource: async (sourceId, updates) => {
-        if (!this.alertEngine) throw new Error('Alert engine not initialized');
-        return await this.alertEngine.updateSource(sourceId, updates);
-      },
-
-      // Alert system
-      showAlert: async (alertConfig) => {
-        if (!this.alertEngine) throw new Error('Alert engine not initialized');
-        return await this.alertEngine.showAlert(alertConfig);
-      },
-      
-      hideAlert: async (alertId) => {
-        if (!this.alertEngine) throw new Error('Alert engine not initialized');
-        return await this.alertEngine.hideAlert(alertId);
-      },
-      
-      getAlertQueueStatus: () => {
-        if (!this.alertEngine) throw new Error('Alert engine not initialized');
-        return this.alertEngine.getQueueStatus();
-      },
-
-      // Automation
-      registerAutomation: (rule) => {
-        if (!this.automationEngine) throw new Error('Automation engine not initialized');
-        return this.automationEngine.registerRule(rule);
-      },
-      
-      unregisterAutomation: (ruleId) => {
-        if (!this.automationEngine) throw new Error('Automation engine not initialized');
-        return this.automationEngine.unregisterRule(ruleId);
-      },
-      
-      executeAction: async (action, event = {}) => {
-        if (!this.automationEngine) throw new Error('Automation engine not initialized');
-        return await this.automationEngine.executeAction(action, event);
-      },
-      
-      getAutomations: () => {
-        if (!this.automationEngine) throw new Error('Automation engine not initialized');
-        return this.automationEngine.getRules();
-      },
-
-      // Source control
-      showSource: async (scene, source) => {
-        if (!this.obsServices) throw new Error('OBS services not initialized');
-        return await this.obsServices.setSourceVisibility(scene, source, true);
-      },
-      
-      hideSource: async (scene, source) => {
-        if (!this.obsServices) throw new Error('OBS services not initialized');
-        return await this.obsServices.setSourceVisibility(scene, source, false);
-      },
-
-      // Media control
-      playMedia: async (source) => {
-        if (!this.obsServices) throw new Error('OBS services not initialized');
-        return await this.obsServices.playMedia(source);
-      },
-      
-      pauseMedia: async (source) => {
-        if (!this.obsServices) throw new Error('OBS services not initialized');
-        return await this.obsServices.pauseMedia(source);
-      },
-      
-      restartMedia: async (source) => {
-        if (!this.obsServices) throw new Error('OBS services not initialized');
-        return await this.obsServices.restartMedia(source);
-      },
-
-      // Stream/Recording control
-      startStreaming: async () => {
-        if (!this.obsServices) throw new Error('OBS services not initialized');
-        return await this.obsServices.startStreaming();
-      },
-      
-      stopStreaming: async () => {
-        if (!this.obsServices) throw new Error('OBS services not initialized');
-        return await this.obsServices.stopStreaming();
-      },
-      
-      startRecording: async () => {
-        if (!this.obsServices) throw new Error('OBS services not initialized');
-        return await this.obsServices.startRecording();
-      },
-      
-      stopRecording: async () => {
-        if (!this.obsServices) throw new Error('OBS services not initialized');
-        return await this.obsServices.stopRecording();
-      },
-
-      // Statistics
-      getStats: async () => {
-        if (!this.obsServices) throw new Error('OBS services not initialized');
-        return await this.obsServices.getSystemStats();
-      },
-      
-      getStreamingStats: async () => {
-        if (!this.obsServices) throw new Error('OBS services not initialized');
-        return await this.obsServices.getStreamingStats();
-      },
-      
-      getRecordingStats: async () => {
-        if (!this.obsServices) throw new Error('OBS services not initialized');
-        return await this.obsServices.getRecordingStats();
-      }
-    };
+    obsServices = null;
+    alertEngine = null;
+    automationEngine = null;
+    isConnected = false;
   }
 };

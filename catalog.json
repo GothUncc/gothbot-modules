@@ -1,6 +1,6 @@
 {
-  "version": "1.0.4",
-  "lastUpdated": "2025-11-08T18:00:00Z",
+  "version": "1.0.5",
+  "lastUpdated": "2025-11-09T00:30:00Z",
   "description": "Official GothBot Module Marketplace",
   "modules": [
     {
@@ -12,7 +12,7 @@
       "category": "infrastructure",
       "tags": ["obs", "overlay", "automation", "websocket", "infrastructure", "alerts", "scenes"],
       "icon": "🎥",
-      "downloadUrl": "https://raw.githubusercontent.com/GothUncc/gothomationbotV2/main/modules/obs-control",
+      "downloadUrl": "https://raw.githubusercontent.com/GothUncc/gothbot-modules/main/modules/obs-control/index.js",
       "installType": "bundled",
       "screenshots": [],
       "features": [

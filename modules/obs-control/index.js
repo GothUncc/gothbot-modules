@@ -1,13 +1,284 @@
 /**
  * OBS Control Module
  * Provides dynamic OBS source management and event-driven automation
+ * 
+ * Note: All code is inlined for isolated-vm compatibility (no imports allowed)
  */
 
-import { initializeOBSServices } from './src/OBSModuleCore.js';
-import { DynamicAlertEngine } from './src/DynamicAlertEngine.js';
-import { AutomationEngine } from './src/AutomationEngine.js';
+// ============================================================================
+// OBS Module Core
+// ============================================================================
 
-export default {
+class OBSModuleCore {
+  constructor(config, logger, obsServiceProvider = null) {
+    this.config = config;
+    this.logger = logger;
+    this.connected = false;
+    this.obsCore = obsServiceProvider;
+    this.eventHandlers = new Map();
+  }
+
+  async connect() {
+    try {
+      this.logger.info('Initializing OBS connection', {
+        host: this.config.host,
+        port: this.config.port,
+        hasInjectedService: !!this.obsCore
+      });
+
+      if (this.obsCore) {
+        this.logger.info('Using bot OBS service');
+        
+        if (this.obsCore.on) {
+          this.obsCore.on('connected', () => this.handleOBSConnected());
+          this.obsCore.on('disconnected', () => this.handleOBSDisconnected());
+          this.obsCore.on('error', (err) => this.handleOBSError(err));
+        }
+        
+        this.connected = this.obsCore.isConnected?.() || false;
+        
+        if (this.connected) {
+          this.emit('connected');
+        }
+      } else {
+        this.logger.warn('No OBS service provided - running in standalone mode');
+        this.connected = false;
+      }
+      
+      this.logger.info('OBS Module Core initialized');
+    } catch (error) {
+      this.logger.error('Failed to initialize OBS connection', {
+        error: error.message,
+        stack: error.stack
+      });
+      this.connected = false;
+      throw error;
+    }
+  }
+
+  handleOBSConnected() {
+    this.connected = true;
+    this.logger.info('OBS connected via bot service');
+    this.emit('connected');
+  }
+
+  handleOBSDisconnected() {
+    this.connected = false;
+    this.logger.warn('OBS disconnected');
+    this.emit('disconnected');
+  }
+
+  handleOBSError(error) {
+    this.logger.error('OBS error from bot service', {
+      error: error?.message || 'Unknown error'
+    });
+    this.emit('error', error);
+  }
+
+  async disconnect() {
+    if (!this.connected) return;
+    
+    try {
+      this.logger.info('Disconnecting from OBS');
+      this.connected = false;
+      this.emit('disconnected');
+      this.logger.info('Disconnected from OBS');
+    } catch (error) {
+      this.logger.error('Error during OBS disconnect', { error: error.message });
+    }
+  }
+
+  isConnected() {
+    return this.connected;
+  }
+
+  ensureConnected() {
+    if (!this.connected) {
+      throw new Error('Not connected to OBS WebSocket');
+    }
+  }
+
+  // Scene management
+  async getSceneList() {
+    this.ensureConnected();
+    if (this.obsCore && this.obsCore.getSceneList) {
+      return await this.obsCore.getSceneList();
+    }
+    this.logger.warn('getSceneList not available');
+    return [];
+  }
+
+  async getCurrentProgramScene() {
+    this.ensureConnected();
+    if (this.obsCore && this.obsCore.getCurrentProgramScene) {
+      return await this.obsCore.getCurrentProgramScene();
+    }
+    this.logger.warn('getCurrentProgramScene not available');
+    return 'Main';
+  }
+
+  async setCurrentProgramScene(sceneName) {
+    this.ensureConnected();
+    if (this.obsCore && this.obsCore.setCurrentProgramScene) {
+      await this.obsCore.setCurrentProgramScene(sceneName);
+      this.logger.info('Scene switched', { sceneName });
+      return;
+    }
+    this.logger.warn('setCurrentProgramScene not available', { sceneName });
+  }
+
+  // Source management
+  async createBrowserSource(sceneName, sourceName, settings) {
+    this.ensureConnected();
+    if (this.obsCore && this.obsCore.createBrowserSource) {
+      await this.obsCore.createBrowserSource(sceneName, sourceName, settings);
+      this.logger.info('Browser source created', { scene: sceneName, source: sourceName });
+      return;
+    }
+    this.logger.warn('createBrowserSource not available', { scene: sceneName, source: sourceName });
+  }
+
+  async removeSceneItem(sceneName, sourceName) {
+    this.ensureConnected();
+    if (this.obsCore && this.obsCore.removeSceneItem) {
+      await this.obsCore.removeSceneItem(sceneName, sourceName);
+      this.logger.info('Scene item removed', { scene: sceneName, source: sourceName });
+      return;
+    }
+    this.logger.warn('removeSceneItem not available', { scene: sceneName, source: sourceName });
+  }
+
+  async setSourceVisibility(sceneName, sourceName, visible) {
+    this.ensureConnected();
+    if (this.obsCore && this.obsCore.setSceneItemEnabled) {
+      await this.obsCore.setSceneItemEnabled(sceneName, sourceName, visible);
+      this.logger.info('Source visibility changed', { scene: sceneName, source: sourceName, visible });
+      return;
+    }
+    this.logger.warn('setSourceVisibility not available', { scene: sceneName, source: sourceName, visible });
+  }
+
+  async getSourceVisibility(sceneName, sourceName) {
+    this.ensureConnected();
+    if (this.obsCore && this.obsCore.getSceneItemEnabled) {
+      return await this.obsCore.getSceneItemEnabled(sceneName, sourceName);
+    }
+    this.logger.warn('getSourceVisibility not available');
+    return false;
+  }
+
+  // Media control
+  async playMedia(sourceName) {
+    this.ensureConnected();
+    if (this.obsCore && this.obsCore.triggerMediaInputAction) {
+      await this.obsCore.triggerMediaInputAction(sourceName, 'OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PLAY');
+      this.logger.info('Media playback started', { source: sourceName });
+      return;
+    }
+    this.logger.warn('playMedia not available', { source: sourceName });
+  }
+
+  // Event handling
+  on(eventName, handler) {
+    if (!this.eventHandlers.has(eventName)) {
+      this.eventHandlers.set(eventName, []);
+    }
+    this.eventHandlers.get(eventName).push(handler);
+  }
+
+  emit(eventName, data) {
+    const handlers = this.eventHandlers.get(eventName);
+    if (handlers) {
+      handlers.forEach(handler => {
+        try {
+          handler(data);
+        } catch (error) {
+          this.logger.error('Event handler error', { event: eventName, error: error.message });
+        }
+      });
+    }
+  }
+}
+
+// ============================================================================
+// Dynamic Alert Engine (Simplified)
+// ============================================================================
+
+class DynamicAlertEngine {
+  constructor(obsCore, context) {
+    this.obsCore = obsCore;
+    this.context = context;
+    this.activeAlerts = new Map();
+    this.alertQueue = [];
+    this.processing = false;
+  }
+
+  async showAlert(config) {
+    const alertId = `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    this.context.logger.info('Alert requested', { id: alertId, type: config.type });
+    
+    // For now, just log - full implementation requires bot integration
+    this.context.logger.warn('Alert system requires full OBS integration');
+    
+    return alertId;
+  }
+
+  getQueueStatus() {
+    return {
+      activeAlerts: this.activeAlerts.size,
+      queuedAlerts: this.alertQueue.length,
+      processing: this.processing
+    };
+  }
+
+  async cleanup() {
+    this.alertQueue = [];
+    this.activeAlerts.clear();
+    this.processing = false;
+  }
+}
+
+// ============================================================================
+// Automation Engine (Simplified)
+// ============================================================================
+
+class AutomationEngine {
+  constructor(obsCore, context) {
+    this.obsCore = obsCore;
+    this.context = context;
+    this.rules = new Map();
+  }
+
+  registerRule(rule) {
+    const ruleId = rule.id || `rule_${Date.now()}`;
+    this.rules.set(ruleId, rule);
+    this.context.logger.info('Automation rule registered', { ruleId, eventType: rule.eventType });
+    return ruleId;
+  }
+
+  unregisterRule(ruleId) {
+    const deleted = this.rules.delete(ruleId);
+    if (deleted) {
+      this.context.logger.info('Automation rule unregistered', { ruleId });
+    }
+    return deleted;
+  }
+
+  getRules() {
+    return Array.from(this.rules.values());
+  }
+
+  async cleanup() {
+    this.rules.clear();
+  }
+}
+
+// ============================================================================
+// Main Module Export
+// ============================================================================
+
+module.exports = {
   name: 'obs-control',
   version: '1.0.0',
 
@@ -70,7 +341,6 @@ export default {
 
     try {
       // Get OBS service from bot if available
-      // The main bot should inject this via context.services.obs
       const obsServiceProvider = context.services?.obs || null;
       
       if (obsServiceProvider) {
@@ -80,14 +350,16 @@ export default {
       }
 
       // Initialize OBS services wrapper
-      this.obsServices = await initializeOBSServices({
+      this.obsServices = new OBSModuleCore({
         host: context.config.host || 'localhost',
         port: context.config.port || 4455,
         password: context.config.password || '',
         autoReconnect: context.config.autoReconnect !== false,
         reconnectDelay: context.config.reconnectDelay || 5000,
         logger: context.logger
-      }, obsServiceProvider);
+      }, context.logger, obsServiceProvider);
+      
+      await this.obsServices.connect();
 
       // Setup components
       this.alertEngine = new DynamicAlertEngine(this.obsServices, context);

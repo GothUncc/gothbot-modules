@@ -761,6 +761,47 @@ let isConnected = false;
 let moduleContext = null;
 
 /**
+ * Load saved automation rules from storage
+ */
+async function loadSavedRules(context) {
+  try {
+    const savedRules = await context.storage.get('automation_rules');
+    if (savedRules && Array.isArray(savedRules)) {
+      for (let i = 0; i < savedRules.length; i++) {
+        try {
+          automationEngine.registerRule(savedRules[i]);
+        } catch (error) {
+          context.logger.error('Failed to load saved rule', {
+            rule: savedRules[i],
+            error: error.message
+          });
+        }
+      }
+      context.logger.info('Loaded saved automation rules', { count: savedRules.length });
+    }
+  } catch (error) {
+    context.logger.error('Failed to load automation rules from storage', {
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Save automation rules to storage
+ */
+async function saveRulesToStorage(context) {
+  try {
+    const rules = automationEngine.getRules();
+    await context.storage.set('automation_rules', rules);
+    context.logger.debug('Automation rules saved to storage', { count: rules.length });
+  } catch (error) {
+    context.logger.error('Failed to save automation rules', {
+      error: error.message
+    });
+  }
+}
+
+/**
  * Setup default automation examples
  */
 function setupDefaultAutomations(context) {
@@ -777,6 +818,60 @@ function setupDefaultAutomations(context) {
   });
 
   context.logger.info('Default automations registered');
+}
+
+/**
+ * Test alert function - for testing the alert system
+ */
+async function testAlert(context, type) {
+  const alertType = type || 'follow';
+  
+  const testConfigs = {
+    follow: {
+      type: 'follow',
+      username: 'TestViewer',
+      message: 'TestViewer just followed!',
+      duration: 5000
+    },
+    subscribe: {
+      type: 'subscribe',
+      username: 'TestSubscriber',
+      message: 'TestSubscriber just subscribed!',
+      duration: 5000
+    },
+    raid: {
+      type: 'raid',
+      username: 'TestRaider',
+      message: 'TestRaider is raiding with 50 viewers!',
+      duration: 5000
+    },
+    donation: {
+      type: 'donation',
+      username: 'TestDonor',
+      message: 'TestDonor donated $5.00!',
+      amount: 5.00,
+      duration: 5000
+    }
+  };
+
+  const config = testConfigs[alertType] || testConfigs.follow;
+  
+  if (!alertEngine) {
+    return { error: 'Alert engine not initialized' };
+  }
+
+  const alertId = await alertEngine.showAlert(config);
+  
+  context.logger.info('Test alert triggered', {
+    type: alertType,
+    alertId: alertId
+  });
+
+  return {
+    success: true,
+    alertId: alertId,
+    message: 'Test ' + alertType + ' alert queued'
+  };
 }
 
 /**
@@ -1007,6 +1102,9 @@ module.exports = {
         context.emit('obs:error', error);
       });
 
+      // Load saved automation rules from storage
+      await loadSavedRules(context);
+
       // Setup event-driven automation examples
       setupDefaultAutomations(context);
 
@@ -1052,5 +1150,88 @@ module.exports = {
     automationEngine = null;
     isConnected = false;
     moduleContext = null;
+  },
+
+  /**
+   * Test alert method - trigger a test alert
+   */
+  testAlert: async function(type) {
+    if (!moduleContext) {
+      return { error: 'Module not initialized' };
+    }
+    return await testAlert(moduleContext, type);
+  },
+
+  /**
+   * Create and save an automation rule
+   */
+  createAutomation: async function(rule) {
+    if (!moduleContext || !automationEngine) {
+      return { error: 'Module not initialized' };
+    }
+    
+    try {
+      const ruleId = automationEngine.registerRule(rule);
+      await saveRulesToStorage(moduleContext);
+      
+      return {
+        success: true,
+        ruleId: ruleId,
+        message: 'Automation rule created successfully'
+      };
+    } catch (error) {
+      moduleContext.logger.error('Failed to create automation', {
+        error: error.message
+      });
+      return { error: error.message };
+    }
+  },
+
+  /**
+   * Delete an automation rule
+   */
+  deleteAutomation: async function(ruleId) {
+    if (!moduleContext || !automationEngine) {
+      return { error: 'Module not initialized' };
+    }
+    
+    const deleted = automationEngine.unregisterRule(ruleId);
+    if (deleted) {
+      await saveRulesToStorage(moduleContext);
+      return {
+        success: true,
+        message: 'Automation rule deleted successfully'
+      };
+    }
+    
+    return { error: 'Rule not found' };
+  },
+
+  /**
+   * List all automation rules
+   */
+  listAutomations: function() {
+    if (!moduleContext || !automationEngine) {
+      return { error: 'Module not initialized' };
+    }
+    
+    return {
+      success: true,
+      rules: automationEngine.getRules()
+    };
+  },
+
+  /**
+   * Get alert queue status
+   */
+  getAlertStatus: function() {
+    if (!moduleContext || !alertEngine) {
+      return { error: 'Module not initialized' };
+    }
+    
+    return {
+      success: true,
+      status: alertEngine.getQueueStatus()
+    };
   }
 };

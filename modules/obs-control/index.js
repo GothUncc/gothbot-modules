@@ -557,23 +557,25 @@ module.exports = {
       moduleContext.logger.info('OBS Control module stopping');
     }
     
-    // Cleanup automation and alerts
-    if (automationEngine) {
-      automationEngine.cleanup();
+    // Clear references (cleanup is synchronous for simple engines)
+    if (automationEngine && automationEngine.rules) {
+      automationEngine.rules.clear();
     }
 
-    if (alertEngine) {
-      alertEngine.cleanup();
+    if (alertEngine && alertEngine.activeAlerts) {
+      alertEngine.activeAlerts.clear();
     }
     
-    // Disconnect from OBS
+    // Mark as disconnected
     if (obsServices) {
-      obsServices.disconnect();
+      obsServices.connected = false;
     }
     
+    // Clear module state
     obsServices = null;
     alertEngine = null;
     automationEngine = null;
     isConnected = false;
+    moduleContext = null;
   }
 };

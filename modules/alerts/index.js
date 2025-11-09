@@ -276,33 +276,6 @@ module.exports = {
         minimum: 1,
         maximum: 30
       },
-      animationStyle: {
-        type: 'string',
-        title: 'Animation Style',
-        description: 'Choose alert animation style',
-        default: 'slideIn',
-        enum: ['slideIn', 'fadeIn', 'bounceIn', 'zoomIn', 'spinIn']
-      },
-      soundEnabled: {
-        type: 'boolean',
-        title: 'Enable Alert Sounds',
-        description: 'Play sound effects with alerts',
-        default: true
-      },
-      soundVolume: {
-        type: 'number',
-        title: 'Sound Volume',
-        description: 'Alert sound volume (0-100)',
-        default: 70,
-        minimum: 0,
-        maximum: 100
-      },
-      ttsEnabled: {
-        type: 'boolean',
-        title: 'Enable Text-to-Speech',
-        description: 'Read alert messages with TTS',
-        default: false
-      },
       minRaidViewers: {
         type: 'number',
         title: 'Minimum Raid Viewers',

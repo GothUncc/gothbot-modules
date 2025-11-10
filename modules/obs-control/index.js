@@ -1094,6 +1094,141 @@ module.exports = {
       
       await obsServices.connect();
 
+      // Add controller methods to obsServices for UI API endpoints
+      // These wrap the Phase 4 controller functionality
+      obsServices.ProfileController = {
+        listProfiles: async () => {
+          if (!obsServices.obsCore?.call) return { profiles: [], currentProfile: null };
+          try {
+            const response = await obsServices.obsCore.call('GetProfileList');
+            return {
+              success: true,
+              profiles: response.profiles || [],
+              currentProfile: response.currentProfileName
+            };
+          } catch (error) {
+            context.logger.error('Error listing profiles', { error: error.message });
+            return { profiles: [], currentProfile: null };
+          }
+        },
+        getCurrentProfile: async () => {
+          if (!obsServices.obsCore?.call) return null;
+          try {
+            const response = await obsServices.obsCore.call('GetProfileList');
+            return response.currentProfileName;
+          } catch (error) {
+            return null;
+          }
+        },
+        setProfile: async (profileName) => {
+          if (!obsServices.obsCore?.call) throw new Error('OBS not connected');
+          await obsServices.obsCore.call('SetCurrentProfile', { profileName });
+          return { success: true, profileName };
+        },
+        createProfile: async (profileName) => {
+          if (!obsServices.obsCore?.call) throw new Error('OBS not connected');
+          await obsServices.obsCore.call('CreateProfile', { profileName });
+          return { success: true, profileName };
+        },
+        removeProfile: async (profileName) => {
+          if (!obsServices.obsCore?.call) throw new Error('OBS not connected');
+          await obsServices.obsCore.call('RemoveProfile', { profileName });
+          return { success: true, profileName };
+        }
+      };
+
+      obsServices.SceneCollectionController = {
+        listCollections: async () => {
+          if (!obsServices.obsCore?.call) return { collections: [], currentCollection: null };
+          try {
+            const response = await obsServices.obsCore.call('GetSceneCollectionList');
+            return {
+              success: true,
+              collections: response.sceneCollections || [],
+              currentCollection: response.currentSceneCollectionName
+            };
+          } catch (error) {
+            return { collections: [], currentCollection: null };
+          }
+        },
+        setCollection: async (collectionName) => {
+          if (!obsServices.obsCore?.call) throw new Error('OBS not connected');
+          await obsServices.obsCore.call('SetCurrentSceneCollection', { sceneCollectionName: collectionName });
+          return { success: true, collectionName };
+        },
+        createCollection: async (collectionName) => {
+          if (!obsServices.obsCore?.call) throw new Error('OBS not connected');
+          await obsServices.obsCore.call('CreateSceneCollection', { sceneCollectionName: collectionName });
+          return { success: true, collectionName };
+        }
+      };
+
+      obsServices.VideoSettingsController = {
+        getVideoSettings: async () => {
+          if (!obsServices.obsCore?.call) return null;
+          try {
+            const response = await obsServices.obsCore.call('GetVideoSettings');
+            return response;
+          } catch (error) {
+            return null;
+          }
+        },
+        setVideoSettings: async (settings) => {
+          if (!obsServices.obsCore?.call) throw new Error('OBS not connected');
+          await obsServices.obsCore.call('SetVideoSettings', settings);
+          return { success: true };
+        }
+      };
+
+      obsServices.ReplayBufferController = {
+        getStatus: async () => {
+          if (!obsServices.obsCore?.call) return { active: false };
+          try {
+            const response = await obsServices.obsCore.call('GetReplayBufferStatus');
+            return { active: response.outputActive };
+          } catch (error) {
+            return { active: false };
+          }
+        },
+        start: async () => {
+          if (!obsServices.obsCore?.call) throw new Error('OBS not connected');
+          await obsServices.obsCore.call('StartReplayBuffer');
+          return { success: true };
+        },
+        stop: async () => {
+          if (!obsServices.obsCore?.call) throw new Error('OBS not connected');
+          await obsServices.obsCore.call('StopReplayBuffer');
+          return { success: true };
+        },
+        save: async () => {
+          if (!obsServices.obsCore?.call) throw new Error('OBS not connected');
+          await obsServices.obsCore.call('SaveReplayBuffer');
+          return { success: true };
+        }
+      };
+
+      obsServices.VirtualCamController = {
+        getStatus: async () => {
+          if (!obsServices.obsCore?.call) return { active: false };
+          try {
+            const response = await obsServices.obsCore.call('GetVirtualCamStatus');
+            return { active: response.outputActive };
+          } catch (error) {
+            return { active: false };
+          }
+        },
+        start: async () => {
+          if (!obsServices.obsCore?.call) throw new Error('OBS not connected');
+          await obsServices.obsCore.call('StartVirtualCam');
+          return { success: true };
+        },
+        stop: async () => {
+          if (!obsServices.obsCore?.call) throw new Error('OBS not connected');
+          await obsServices.obsCore.call('StopVirtualCam');
+          return { success: true };
+        }
+      };
+
       // Setup components
       alertEngine = new DynamicAlertEngine(obsServices, context);
       automationEngine = new AutomationEngine(obsServices, context);

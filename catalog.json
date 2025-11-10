@@ -12,7 +12,7 @@
       "category": "infrastructure",
       "tags": ["obs", "control", "streaming", "recording", "audio", "mixer", "studio", "remote", "scenes", "transforms", "filters", "transitions"],
       "icon": "🎛️",
-      "downloadUrl": "https://raw.githubusercontent.com/GothUncc/gothbot-modules/main/modules/obs-control",
+      "downloadUrl": "https://raw.githubusercontent.com/GothUncc/gothbot-modules/main/modules/obs-control/index.js",
       "installType": "bundled",
       "screenshots": [],
       "features": [

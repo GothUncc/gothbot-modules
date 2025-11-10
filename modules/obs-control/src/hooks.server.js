@@ -1,4 +1,5 @@
 import { building } from '$app/environment';
+import { getModuleContext } from './shared-context.js';
 
 // WebSocket connection management
 const wsConnections = new Set();
@@ -12,6 +13,15 @@ export async function handle({ event, resolve }) {
 	if (building) {
 		return resolve(event);
 	}
+
+	// Inject module context into locals for API routes and WebSocket
+	const { context, obsServices, alertEngine, automationEngine } = getModuleContext();
+	event.locals.moduleContext = {
+		obs: obsServices,
+		alert: alertEngine,
+		automation: automationEngine,
+		context: context
+	};
 
 	// Check if this is a WebSocket upgrade request
 	const upgrade = event.request.headers.get('upgrade');

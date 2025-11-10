@@ -1044,6 +1044,20 @@ module.exports = {
       default: 5000,
       minimum: 1000,
       maximum: 30000
+    },
+    enableUI: {
+      type: 'boolean',
+      label: 'Enable Control Panel UI',
+      description: 'Start the web-based control panel interface',
+      default: true
+    },
+    uiPort: {
+      type: 'number',
+      label: 'UI Server Port',
+      description: 'Port for the web control panel',
+      default: 5174,
+      minimum: 1024,
+      maximum: 65535
     }
   },
 
@@ -1084,6 +1098,10 @@ module.exports = {
       alertEngine = new DynamicAlertEngine(obsServices, context);
       automationEngine = new AutomationEngine(obsServices, context);
 
+      // Share context with SvelteKit server for API/WebSocket integration
+      const sharedContext = require('./src/shared-context.js');
+      sharedContext.setModuleContext(context, obsServices, alertEngine, automationEngine);
+
       // Connection event handlers
       obsServices.on('connected', function() {
         isConnected = true;
@@ -1111,6 +1129,44 @@ module.exports = {
       // Store API in context for other modules
       context.obsApi = getPublicAPI(context);
 
+      // Start UI server (SvelteKit) if enabled
+      if (context.config.enableUI !== false) {
+        try {
+          const uiPort = context.config.uiPort || 5174;
+          const { spawn } = require('child_process');
+          const path = require('path');
+          
+          context.logger.info('Starting OBS Control UI server', { port: uiPort });
+          
+          const modulePath = __dirname;
+          const uiServer = spawn('npm', ['run', 'dev', '--', '--port', uiPort.toString()], {
+            cwd: modulePath,
+            shell: true,
+            env: { ...process.env, OBS_MODULE_PORT: uiPort.toString() }
+          });
+          
+          uiServer.stdout.on('data', (data) => {
+            context.logger.info(`[UI] ${data.toString().trim()}`);
+          });
+          
+          uiServer.stderr.on('data', (data) => {
+            context.logger.warn(`[UI] ${data.toString().trim()}`);
+          });
+          
+          uiServer.on('error', (error) => {
+            context.logger.error('UI server error', { error: error.message });
+          });
+          
+          // Store UI server ref for cleanup
+          moduleContext.uiServer = uiServer;
+          
+          context.logger.info(`OBS Control UI available at http://localhost:${uiPort}`);
+        } catch (uiError) {
+          context.logger.error('Failed to start UI server', { error: uiError.message });
+          // Don't throw - UI is optional, backend should still work
+        }
+      }
+
       context.logger.info('OBS Control module initialized successfully');
 
     } catch (error) {
@@ -1128,6 +1184,17 @@ module.exports = {
   stop: function() {
     if (moduleContext) {
       moduleContext.logger.info('OBS Control module stopping');
+      
+      // Stop UI server if running
+      if (moduleContext.uiServer) {
+        try {
+          moduleContext.logger.info('Stopping UI server');
+          moduleContext.uiServer.kill('SIGTERM');
+          moduleContext.uiServer = null;
+        } catch (error) {
+          moduleContext.logger.error('Error stopping UI server', { error: error.message });
+        }
+      }
     }
     
     // Clear references (cleanup is synchronous for simple engines)
@@ -1149,6 +1216,11 @@ module.exports = {
     alertEngine = null;
     automationEngine = null;
     isConnected = false;
+    
+    // Clear shared context for SvelteKit
+    const sharedContext = require('./src/shared-context.js');
+    sharedContext.clearModuleContext();
+    
     moduleContext = null;
   },
 

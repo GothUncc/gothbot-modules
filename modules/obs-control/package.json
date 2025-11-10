@@ -1,0 +1,21 @@
+{
+  "name": "@gothbot/obs-control",
+  "version": "1.0.0",
+  "description": "Dynamic OBS WebSocket control and overlay management",
+  "main": "index.js",
+  "author": "GothBot Team",
+  "license": "MIT",
+  "keywords": [
+    "obs",
+    "overlay",
+    "automation",
+    "websocket",
+    "stream",
+    "alerts"
+  ],
+  "gothbot": {
+    "displayName": "OBS Control & Dynamic Overlays",
+    "category": "infrastructure",
+    "icon": "🎥"
+  }
+}

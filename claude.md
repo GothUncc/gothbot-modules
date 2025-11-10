@@ -1,6 +1,17 @@
 # GOTHBOT MODULES - AI CONTEXT (MACHINE-READABLE)
 
 <!--
+🚨 CRITICAL REPOSITORY POLICY 🚨
+GOTHOMATIONBOTV2 IS READ-ONLY FROM THIS WORKSPACE
+- This workspace (gothbot-modules) is for module development ONLY
+- The GothOmationBot2.0 core system is NEVER to be modified from here
+- The GothOmationBot2.0 repo is visible for reference/dependency checking ONLY
+- VIOLATION = Reverting changes and blocking commits
+- If changes are needed in core, they MUST be made in the GothOmationBot2.0 workspace directly
+- DO NOT: Copy code FROM GothOmationBot2.0 and modify it here (creates conflicts)
+- DO NOT: Edit anything in the GothOmationBot2.0 directory structure
+- DO NOT: Commit any changes that would affect the core system
+
 AI FORMATTING RULES (CRITICAL):
 1. NO prose/paragraphs - use lists, key:value, compact syntax
 2. NO emojis, headers with icons, or decorative elements

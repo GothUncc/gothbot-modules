@@ -27,7 +27,7 @@
     "ui": {
       "title": "OBS Master Control",
       "description": "Complete OBS Studio remote control panel",
-      "entrypoint": "/",
+      "entrypoint": "/dashboard",
       "directory": "build"
     }
   },

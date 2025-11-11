@@ -21,11 +21,21 @@ AI FORMATTING RULES (CRITICAL):
 6. RECENT_CHANGES: Keep last 5 versions only, remove older
 7. When adding new info, find appropriate section or create new compact section
 8. This document is for AI context retrieval - optimize for tokens, not human readability
+
+AI COLLABORATION PROTOCOL:
+- Cross-workspace coordination: C:\Users\malik\OneDrive\Documents\AICollaboration\
+- ModAI (this workspace) ↔ CoreAI (GothomationBot2.0 workspace)
+- Communication files: Machine-readable markdown, token-optimized
+- Format: Issue ID, evidence, root cause, solution options, file locations
+- NO human prose, use compact key:value, lists, code snippets only
+- Prefix files: MOD_TO_CORE_* or CORE_TO_MOD_*
+- Update collaboration files, do NOT create duplicates
+- Cross-reference by filename when responding
 -->
 
 ## META
-- Updated: 2025-11-11T15:50:00Z
-- Version: 1.0.10
+- Updated: 2025-11-11T16:20:00Z
+- Version: 1.0.11
 - Status: MODULE_MARKETPLACE_CATALOG
 - Repo: https://github.com/GothUncc/gothbot-modules
 - Core: https://github.com/GothUncc/gothomationbotV2
@@ -183,6 +193,16 @@ WebSocket broadcast to frontend
 
 ## RECENT_CHANGES
 
+### v1.0.11 (2025-11-11T16:20)
+- OBS Master Control Module: Changed dashboard routing to avoid admin panel conflict
+- Changed: uiPath from "/" to "/dashboard" in catalog.json
+- Changed: ui.entrypoint from "/" to "/dashboard" in package.json
+- Changed: context.web.serveStatic('/dashboard', './build') in index.js
+- Rationale: Admin panel route intercepted "/" requests, preventing module web UI access
+- Solution: Differentiate module path to /modules/obs-master-control/dashboard/ to avoid conflict
+- Module now accessible at /modules/obs-master-control/dashboard/ (once core deploys fix)
+- Updated catalog version: 1.0.10 → 1.0.11, timestamp: 2025-11-11T16:20:00Z
+
 ### v1.0.10 (2025-11-11T15:50)
 - OBS Master Control Module: Integrated v2.0.192+ dashboard visibility system
 - Added: hasUI: true flag to catalog.json entry (enables dashboard button in admin panel)
@@ -281,10 +301,10 @@ WebSocket broadcast to frontend
 
 ## Current State
 
-- **Catalog Version**: 1.0.10
+- **Catalog Version**: 1.0.11
 - **Total Modules**: 2 (OBS Master Control Panel v2.4.0, Alert System v1.0.1)
-- **Last Updated**: 2025-11-11T00:00:00Z
-- **Repository Status**: Active development, OBS Master Control Phase 5 fully deployable with context.web API
+- **Last Updated**: 2025-11-11T16:20:00Z
+- **Repository Status**: Active development, OBS Master Control Phase 5 fully deployable with context.web API, dashboard routing fix applied
 
 ## Available Modules
 

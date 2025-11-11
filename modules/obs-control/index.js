@@ -1579,7 +1579,7 @@ module.exports = {
           context.logger.info('Registering OBS Control web UI');
 
           // Serve static UI files from build directory
-          context.web.serveStatic('/', './build');
+          context.web.serveStatic('/dashboard', './build');
 
           // Register API endpoints
           registerAPIRoutes(context, obsServices, automationEngine);

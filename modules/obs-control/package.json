@@ -28,7 +28,10 @@
       "title": "OBS Master Control",
       "description": "Complete OBS Studio remote control panel",
       "entrypoint": "/",
-      "directory": "build"
+      "directory": "build",
+      "files": [
+        "build/**/*"
+      ]
     }
   },
   "scripts": {

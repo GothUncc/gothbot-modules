@@ -1,9 +1,8 @@
 # Dependencies
 node_modules/
 
-# Build outputs
+# Build outputs (keep build/ for deployment, exclude dev artifacts)
 .svelte-kit/
-build/
 
 # Environment
 .env

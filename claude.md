@@ -181,15 +181,20 @@ WebSocket broadcast to frontend
 - Module implementation must use context.web.serveStatic() and context.web.registerRoute() for UI
 
 ## KNOWN_ISSUES
-- Core System: Dashboard button not rendering for OBS Master Control v2.4.0
-  - Status: BLOCKED - Core system bug (not module issue)
-  - Catalog fix: COMPLETE (hasUI: true added v1.0.10)
-  - Module implementation: COMPLETE (context.web API integrated)
-  - Root cause: Module installation doesn't extract hasUI/ui from package.json to database
-  - Impact: Backend API returns hasUI: false, frontend has no data to render button
-  - Documentation: CORE_SYSTEM_BUG_REPORT_DASHBOARD_BUTTON.md
-  - Assigned: GothomationBot2.0 core team
-  - Workaround: Direct URL access works (/modules/obs-master-control/)
+- Core System: Module serving path changes require container restart
+  - Status: LIMITATION - Express middleware chain behavior
+  - Root cause: Old routers not unmounted when modules reload, shadow new routes
+  - Impact: Changing context.web.serveStatic() path requires full container restart to apply
+  - Documentation: CORE_ANALYSIS_WEB_SERVESTATIC.md
+  - Workaround: Container restart clears middleware chain, fresh routes registered
+  - Future fix: CoreAI to implement router tracking/unmounting in ModuleRuntime
+- Core System: Dashboard button routing (RESOLVED v1.0.11)
+  - Status: COMPLETE - Core system fixed in v2.0.204
+  - Catalog fix: COMPLETE (uiPath: "/dashboard" in v1.0.11)
+  - Module implementation: COMPLETE (context.web.serveStatic('/dashboard', './build'))
+  - Root cause: Admin panel route was intercepting root "/" requests
+  - Solution: Changed module UI path to "/dashboard" to differentiate from admin config
+  - Requires: Container restart to clear old middleware and register new serving path
 
 ## RECENT_CHANGES
 

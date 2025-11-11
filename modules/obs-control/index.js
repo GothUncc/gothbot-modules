@@ -1546,10 +1546,6 @@ module.exports = {
       alertEngine = new DynamicAlertEngine(obsServices, context);
       automationEngine = new AutomationEngine(obsServices, context);
 
-      // Share context with SvelteKit server for API/WebSocket integration
-      const sharedContext = require('./src/shared-context.js');
-      sharedContext.setModuleContext(context, obsServices, alertEngine, automationEngine);
-
       // Connection event handlers
       obsServices.on('connected', function() {
         isConnected = true;
@@ -1638,11 +1634,6 @@ module.exports = {
     alertEngine = null;
     automationEngine = null;
     isConnected = false;
-
-    // Clear shared context
-    const sharedContext = require('./src/shared-context.js');
-    sharedContext.clearModuleContext();
-
     moduleContext = null;
   },
 

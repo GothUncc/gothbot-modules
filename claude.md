@@ -188,13 +188,14 @@ WebSocket broadcast to frontend
   - Documentation: CORE_ANALYSIS_WEB_SERVESTATIC.md
   - Workaround: Container restart clears middleware chain, fresh routes registered
   - Future fix: CoreAI to implement router tracking/unmounting in ModuleRuntime
-- Core System: Dashboard button routing (RESOLVED v1.0.11)
-  - Status: COMPLETE - Core system fixed in v2.0.204
-  - Catalog fix: COMPLETE (uiPath: "/dashboard" in v1.0.11)
-  - Module implementation: COMPLETE (context.web.serveStatic('/dashboard', './build'))
-  - Root cause: Admin panel route was intercepting root "/" requests
-  - Solution: Changed module UI path to "/dashboard" to differentiate from admin config
-  - Requires: Container restart to clear old middleware and register new serving path
+- Core System: Module static file serving (IN PROGRESS - v2.0.206+)
+  - Status: SOLUTION_IDENTIFIED - File extraction system pending Core implementation
+  - Root cause: Module files stored in database, not filesystem; serveStatic() can't find files
+  - Solution: Core to extract module files to filesystem during installation (Option 2 - file manifest)
+  - ModAI status: COMPLETE - files manifest added to package.json (commit de6568f)
+  - Core status: Phases 1-3 implementation pending
+  - Documentation: CORE_TO_MOD_ARCHITECTURE_ANSWERS.md, MOD_TO_CORE_IMPLEMENTATION_READY.md
+  - Timeline: 2-3 hours for Core deployment, then dashboard UI functional
 
 ## RECENT_CHANGES
 

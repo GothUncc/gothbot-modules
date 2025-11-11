@@ -1,6 +1,6 @@
 {
-  "version": "1.0.11",
-  "lastUpdated": "2025-11-11T16:20:00Z",
+  "version": "1.0.10",
+  "lastUpdated": "2025-11-11T15:50:00Z",
   "description": "Official GothBot Module Marketplace",
   "modules": [
     {
@@ -13,11 +13,11 @@
       "tags": ["obs", "control", "streaming", "recording", "audio", "mixer", "studio", "remote", "scenes", "transforms", "filters", "transitions"],
       "icon": "🎛️",
       "hasUI": true,
-      "uiPath": "/dashboard",
+      "uiPath": "/",
       "ui": {
         "title": "OBS Master Control",
         "description": "Complete OBS Studio remote control panel with dashboard",
-        "entrypoint": "/dashboard",
+        "entrypoint": "/",
         "icon": "🎛️"
       },
       "downloadUrl": "https://raw.githubusercontent.com/GothUncc/gothbot-modules/main/modules/obs-control/index.js",

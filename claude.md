@@ -24,7 +24,7 @@ AI FORMATTING RULES (CRITICAL):
 -->
 
 ## META
-- Updated: 2025-11-11T00:00:00Z
+- Updated: 2025-11-11T15:50:00Z
 - Version: 1.0.10
 - Status: MODULE_MARKETPLACE_CATALOG
 - Repo: https://github.com/GothUncc/gothbot-modules
@@ -48,6 +48,8 @@ README.md - Public marketplace documentation & submission guidelines
 architecture.md - Module development guide & system architecture
 claude.md - This file - AI assistant context
 MODULE_36_IMPLEMENTATION_PLAN.md - OBS Control module implementation notes
+CATALOG_HASUI_ISSUE.md - Catalog hasUI field issue (RESOLVED v1.0.10)
+CORE_SYSTEM_BUG_REPORT_DASHBOARD_BUTTON.md - Core system bug preventing dashboard button display
 
 ## CATALOG.JSON_SCHEMA
 Module entry fields:
@@ -164,16 +166,35 @@ WebSocket broadcast to frontend
 - Module web UI support: Core now provides context.web API for HTTP routes and static file serving
 - Web UI modules: Routes namespaced under /modules/{moduleId}, authentication inherited from bot
 - Feature request pattern: Document blockers (FEATURE_REQUEST_MODULE_WEB_UI.md) before core changes
+- Dashboard button visibility: Requires hasUI: true in catalog.json (v2.0.192+)
+- Dashboard metadata: uiPath and ui object with title, description, entrypoint, icon fields required
+- Module implementation must use context.web.serveStatic() and context.web.registerRoute() for UI
+
+## KNOWN_ISSUES
+- Core System: Dashboard button not rendering for OBS Master Control v2.4.0
+  - Status: BLOCKED - Core system bug (not module issue)
+  - Catalog fix: COMPLETE (hasUI: true added v1.0.10)
+  - Module implementation: COMPLETE (context.web API integrated)
+  - Root cause: Module installation doesn't extract hasUI/ui from package.json to database
+  - Impact: Backend API returns hasUI: false, frontend has no data to render button
+  - Documentation: CORE_SYSTEM_BUG_REPORT_DASHBOARD_BUTTON.md
+  - Assigned: GothomationBot2.0 core team
+  - Workaround: Direct URL access works (/modules/obs-master-control/)
 
 ## RECENT_CHANGES
 
-### v1.0.10 (2025-11-11T00:00)
-- Core system updated: Module web UI support implemented (context.web API)
-- OBS Master Control v2.4.0 Phase 5 now fully deployable
-- context.web API: registerRoute(), serveStatic(), getBaseUrl()
-- Module routes namespaced: /modules/{moduleId}/*
-- Resolved blocker: FEATURE_REQUEST_MODULE_WEB_UI.md requirements met
-- Updated CLAUDE.md: Added context.web to MODULE_API_CONTEXT, CRITICAL_LEARNINGS
+### v1.0.10 (2025-11-11T15:50)
+- OBS Master Control Module: Integrated v2.0.192+ dashboard visibility system
+- Added: hasUI: true flag to catalog.json entry (enables dashboard button in admin panel)
+- Added: uiPath: "/" to catalog.json entry (sets UI entrypoint)
+- Added: ui object with title, description, entrypoint, icon (provides dashboard metadata)
+- Verified: Module already implements context.web API (registerRoute, serveStatic, WebSocket)
+- Updated catalog version: 1.0.9 → 1.0.10, timestamp: 2025-11-11T15:50:00Z
+- Module implementation complete: All v2.0.192+ features integrated and functional
+- ⚠️ Core System Bug Found: Dashboard button not appearing (see CORE_SYSTEM_BUG_REPORT_DASHBOARD_BUTTON.md)
+- Bug Root Cause: Module installation doesn't extract hasUI/ui from package.json into database metadata
+- Bug Impact: Backend API returns hasUI: false because database lacks these fields (frontend is ready)
+- Bug Status: Documented for GothomationBot2.0 core system team to fix
 
 ### v1.0.9 (2025-11-10T22:45)
 - OBS Master Control v2.4.0 released (Phase 5 complete - UI dashboard)

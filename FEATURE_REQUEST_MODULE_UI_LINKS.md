@@ -4,7 +4,9 @@
 **Requestor**: GothBot Development Team
 **Priority**: High
 **Scope**: Core System Enhancement
-**Related**: Module Web UI Support (FEATURE_REQUEST_MODULE_WEB_UI.md)
+**Related**: Module Web UI Support (FEATURE_REQUEST_MODULE_WEB_UI.md)  
+**Status**: ⚠️ **PARTIALLY IMPLEMENTED** (v2.0.194) - See Known Issues  
+**Known Issue**: Dashboard button not appearing due to core system bug (CORE_SYSTEM_BUG_REPORT_DASHBOARD_BUTTON.md)
 
 ---
 
@@ -24,6 +26,31 @@ Modules with web-based UIs (indicated by `hasUI: true` in metadata) are successf
 2. Admin panel shows a "Open Dashboard" or "Manage" button next to the module
 3. User clicks button → navigated to module's web UI
 4. Clear, intuitive access to module functionality
+
+---
+
+## ⚠️ Resolution Summary
+
+**Partially Implemented in**: GothomationBot v2.0.194 (2025-11-11)
+
+The frontend code is complete and ready:
+- ✅ ModuleCard component checks for `hasUI` flag
+- ✅ Renders "Open Dashboard" button when `hasUI: true`
+- ✅ Dashboard section displays modules with UIs
+- ✅ Visual badges indicate web UI availability
+
+**Catalog Status**:
+- ✅ catalog.json updated with `hasUI: true` and `ui` object (v1.0.10)
+
+**Current Blocker**:
+- ❌ Backend API returns `hasUI: false` for all modules
+- ❌ Module installation doesn't extract `hasUI` from package.json to database
+- ❌ Database metadata missing `hasUI`/`ui` fields
+- ❌ Result: Dashboard button never renders
+
+**See**: CORE_SYSTEM_BUG_REPORT_DASHBOARD_BUTTON.md for detailed analysis and fix requirements
+
+**Workaround**: Direct URL navigation to `/modules/obs-master-control/` works perfectly
 
 ---
 

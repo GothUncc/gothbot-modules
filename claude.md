@@ -24,8 +24,8 @@ AI FORMATTING RULES (CRITICAL):
 -->
 
 ## META
-- Updated: 2025-11-10T22:45:00Z
-- Version: 1.0.9
+- Updated: 2025-11-11T00:00:00Z
+- Version: 1.0.10
 - Status: MODULE_MARKETPLACE_CATALOG
 - Repo: https://github.com/GothUncc/gothbot-modules
 - Core: https://github.com/GothUncc/gothomationbotV2
@@ -141,6 +141,9 @@ context.overlay.clear()
 context.obsControl.* // OBS Master Control Panel - 174+ methods across 14 controllers (audio, streaming, recording, sceneItems, filters, transitions, scenes, sources, automation, virtualCam, replayBuffer, profiles, sceneCollections, videoSettings)
 context.storage.* // Persistent key-value storage
 context.events.* // Event subscriptions & publishing
+context.web.registerRoute(method, path, handler) // Register HTTP routes (GET/POST/PUT/DELETE)
+context.web.serveStatic(urlPath, localPath) // Serve static UI files
+context.web.getBaseUrl() // Get module's web UI base URL (/modules/{moduleId})
 
 ### Event Types
 50+ event types from Twitch/Kick/YouTube platforms
@@ -158,8 +161,19 @@ WebSocket broadcast to frontend
 - Categories must match allowed enum values exactly
 - official flag reserved for GothBot Team only
 - Module sandboxing enforced: 5s timeout, 128MB limit
+- Module web UI support: Core now provides context.web API for HTTP routes and static file serving
+- Web UI modules: Routes namespaced under /modules/{moduleId}, authentication inherited from bot
+- Feature request pattern: Document blockers (FEATURE_REQUEST_MODULE_WEB_UI.md) before core changes
 
 ## RECENT_CHANGES
+
+### v1.0.10 (2025-11-11T00:00)
+- Core system updated: Module web UI support implemented (context.web API)
+- OBS Master Control v2.4.0 Phase 5 now fully deployable
+- context.web API: registerRoute(), serveStatic(), getBaseUrl()
+- Module routes namespaced: /modules/{moduleId}/*
+- Resolved blocker: FEATURE_REQUEST_MODULE_WEB_UI.md requirements met
+- Updated CLAUDE.md: Added context.web to MODULE_API_CONTEXT, CRITICAL_LEARNINGS
 
 ### v1.0.9 (2025-11-10T22:45)
 - OBS Master Control v2.4.0 released (Phase 5 complete - UI dashboard)
@@ -199,29 +213,6 @@ WebSocket broadcast to frontend
 - Filter control: create, remove, enable/disable, configure, reorder
 - Transition control: select, duration, settings, progress monitoring
 - Studio mode: preview to program, T-bar control, animated transitions
-
-### v1.0.6 (2025-11-10T18:00)
-- OBS Master Control v2.1.0 released (Phase 2 complete)
-- Added SceneItemController.js: 27 methods for scene item transforms
-- Position, scale, rotation, crop, bounds, visibility, locking, layering, blend modes
-- Updated catalog.json to reflect Phase 2 completion
-
-### v1.0.5 (2025-11-10T12:00)
-- OBS Master Control v2.0.0 released (Phase 1 complete)
-- Complete module rewrite: audio mixer, streaming, recording controls
-- Breaking change: context.obsApi → context.obsControl
-- Alert functionality removed (moved to core overlay system)
-
-### v1.0.1 (2025-11-09T20:30)
-- Updated claude.md to match core GothomationBot v2 format/structure
-- Converted from prose to compact AI-optimized format
-- Added JSON schema reference, module API context from core
-- Aligned formatting with core claude.md patterns
-
-### v1.0.0 (2025-11-08)
-- Initial marketplace documentation
-- catalog.json schema definition
-- Module submission guidelines
 
 ## AI_ASSISTANT_GUIDELINES
 
@@ -269,15 +260,15 @@ WebSocket broadcast to frontend
 
 ## Current State
 
-- **Catalog Version**: 1.0.8
-- **Total Modules**: 2 (OBS Master Control Panel v2.3.0, Alert System v1.0.1)
-- **Last Updated**: 2025-11-10T21:30:00Z
-- **Repository Status**: Active development, OBS Master Control Phase 4 complete
+- **Catalog Version**: 1.0.10
+- **Total Modules**: 2 (OBS Master Control Panel v2.4.0, Alert System v1.0.1)
+- **Last Updated**: 2025-11-11T00:00:00Z
+- **Repository Status**: Active development, OBS Master Control Phase 5 fully deployable with context.web API
 
 ## Available Modules
 
 ### Infrastructure Modules
-1. **obs-master-control** (v2.3.0) - OBS Master Control Panel
+1. **obs-master-control** (v2.4.0) - OBS Master Control Panel
    - Complete OBS Studio remote control (audio, streaming, recording, transforms, filters, transitions, virtual cam, replay buffer, profiles, scene collections, video settings)
    - Audio mixer: volume, mute, balance, sync offset, monitoring (13 methods)
    - Stream controls: start, stop, stats, captions (8 methods)
@@ -294,7 +285,7 @@ WebSocket broadcast to frontend
    - 174+ OBS control methods across 14 controllers
    - Breaking change: context.obsApi → context.obsControl
    - Alert functionality removed (use core's context.overlay instead)
-   - Phase 1, 2, 3, 4 complete; Phase 5 planned (Web UI control panel)
+   - Phase 1, 2, 3, 4, 5 complete - Full web UI with SvelteKit dashboard deployed via context.web API
 
 ### Overlay Modules
 2. **alerts** (v1.0.1) - Alert System
@@ -332,12 +323,12 @@ GothBot runs on production Unraid server:
 ## Priority Modules in Development
 
 Based on issue analysis and dependencies:
-1. ✅ **#36 OBS Master Control v2.3.0** - Phase 1, 2, 3, 4 Complete
+1. ✅ **#36 OBS Master Control v2.4.0** - ALL PHASES COMPLETE
    - ✅ Phase 1 (v2.0.0): Audio mixer, streaming controls, recording controls
    - ✅ Phase 2 (v2.1.0): Scene item transforms (position, scale, rotation, crop, bounds, visibility, locking, layering, blend modes)
    - ✅ Phase 3 (v2.2.0): Filters & transitions (filter management, transition control, studio mode, T-bar)
    - ✅ Phase 4 (v2.3.0): Advanced features (virtual cam, replay buffer, profile switching, scene collections, video settings) - 60 new methods
-   - Phase 5 (v2.4.0): Web-based control panel UI
+   - ✅ Phase 5 (v2.4.0): Web-based control panel UI - SvelteKit dashboard with 9 components, 7 REST endpoints, WebSocket server - DEPLOYED
 2. **Alert System v2.0** - Rewrite to use context.overlay (core's unified overlay system)
 3. **#37 AI/ML Framework** - Foundation for AI modules
 4. **#4 Chat Commands** - Foundation for chat-based features
@@ -352,6 +343,8 @@ When building new modules, follow this pattern:
 3. Include configuration schema in package.json
 4. Expose public API via `context.moduleApi` for other modules
 5. Implement proper lifecycle hooks (initialize, start, stop, shutdown)
+6. For web UI modules: Use context.web API (registerRoute, serveStatic, getBaseUrl)
+7. Web UI files: Build static assets, serve from module directory, routes auto-namespaced to /modules/{moduleId}
 
 ### Testing Before Production
 - Always test locally before pushing to production server

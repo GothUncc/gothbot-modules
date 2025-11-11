@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-node';
+import adapter from '@sveltejs/adapter-static';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
@@ -8,21 +8,29 @@ const config = {
 	preprocess: vitePreprocess(),
 
 	kit: {
-		// adapter-node for standalone Node.js server
+		// adapter-static for pre-built static files served via context.web
 		adapter: adapter({
-			out: 'build',
+			pages: 'build',
+			assets: 'build',
+			fallback: 'index.html',
 			precompress: false,
-			envPrefix: 'OBS_'
+			strict: false
 		}),
-		
+
 		// Routes directory
 		files: {
 			routes: 'routes'
 		},
-		
+
 		// App configuration
 		alias: {
 			$lib: 'routes/lib'
+		},
+
+		// Prerendering configuration for static export
+		prerender: {
+			handleHttpError: 'warn',
+			handleMissingId: 'warn'
 		}
 	}
 };

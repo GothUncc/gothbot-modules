@@ -1001,6 +1001,319 @@ function getPublicAPI(context) {
   };
 }
 
+// ============================================================================
+// Web UI Integration Functions
+// ============================================================================
+
+/**
+ * Register all API routes for the web UI
+ */
+function registerAPIRoutes(context, obsServices, automationEngine) {
+  // Status endpoint
+  context.web.registerRoute('GET', '/api/obs/status', async function(req, res) {
+    try {
+      const status = await obsServices.getStatus();
+      res.json(status);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Profile endpoints
+  context.web.registerRoute('GET', '/api/obs/profiles', async function(req, res) {
+    try {
+      if (!obsServices.ProfileController) {
+        return res.status(503).json({ error: 'Profile controller not available' });
+      }
+      const profiles = await obsServices.ProfileController.getProfiles();
+      res.json(profiles);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  context.web.registerRoute('POST', '/api/obs/profiles', async function(req, res) {
+    try {
+      if (!obsServices.ProfileController) {
+        return res.status(503).json({ error: 'Profile controller not available' });
+      }
+      const { profileName } = req.body;
+      await obsServices.ProfileController.createProfile(profileName);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Collection endpoints
+  context.web.registerRoute('GET', '/api/obs/collections', async function(req, res) {
+    try {
+      if (!obsServices.SceneCollectionController) {
+        return res.status(503).json({ error: 'Collection controller not available' });
+      }
+      const collections = await obsServices.SceneCollectionController.getCollections();
+      res.json(collections);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  context.web.registerRoute('POST', '/api/obs/collections', async function(req, res) {
+    try {
+      if (!obsServices.SceneCollectionController) {
+        return res.status(503).json({ error: 'Collection controller not available' });
+      }
+      const { collectionName } = req.body;
+      await obsServices.SceneCollectionController.createCollection(collectionName);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Video settings endpoints
+  context.web.registerRoute('GET', '/api/obs/video-settings', async function(req, res) {
+    try {
+      if (!obsServices.VideoSettingsController) {
+        return res.status(503).json({ error: 'Video settings controller not available' });
+      }
+      const settings = await obsServices.VideoSettingsController.getVideoSettings();
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  context.web.registerRoute('POST', '/api/obs/video-settings', async function(req, res) {
+    try {
+      if (!obsServices.VideoSettingsController) {
+        return res.status(503).json({ error: 'Video settings controller not available' });
+      }
+      const { width, height, fps } = req.body;
+      await obsServices.VideoSettingsController.setVideoSettings(width, height, fps);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Replay buffer endpoints
+  context.web.registerRoute('GET', '/api/obs/replay-buffer', async function(req, res) {
+    try {
+      if (!obsServices.ReplayBufferController) {
+        return res.status(503).json({ error: 'Replay buffer controller not available' });
+      }
+      const status = await obsServices.ReplayBufferController.getStatus();
+      res.json(status);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  context.web.registerRoute('POST', '/api/obs/replay-buffer/start', async function(req, res) {
+    try {
+      if (!obsServices.ReplayBufferController) {
+        return res.status(503).json({ error: 'Replay buffer controller not available' });
+      }
+      await obsServices.ReplayBufferController.start();
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  context.web.registerRoute('POST', '/api/obs/replay-buffer/stop', async function(req, res) {
+    try {
+      if (!obsServices.ReplayBufferController) {
+        return res.status(503).json({ error: 'Replay buffer controller not available' });
+      }
+      await obsServices.ReplayBufferController.stop();
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  context.web.registerRoute('POST', '/api/obs/replay-buffer/save', async function(req, res) {
+    try {
+      if (!obsServices.ReplayBufferController) {
+        return res.status(503).json({ error: 'Replay buffer controller not available' });
+      }
+      await obsServices.ReplayBufferController.save();
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Virtual camera endpoints
+  context.web.registerRoute('GET', '/api/obs/virtual-camera', async function(req, res) {
+    try {
+      if (!obsServices.VirtualCamController) {
+        return res.status(503).json({ error: 'Virtual camera controller not available' });
+      }
+      const status = await obsServices.VirtualCamController.getStatus();
+      res.json(status);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  context.web.registerRoute('POST', '/api/obs/virtual-camera/start', async function(req, res) {
+    try {
+      if (!obsServices.VirtualCamController) {
+        return res.status(503).json({ error: 'Virtual camera controller not available' });
+      }
+      await obsServices.VirtualCamController.start();
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  context.web.registerRoute('POST', '/api/obs/virtual-camera/stop', async function(req, res) {
+    try {
+      if (!obsServices.VirtualCamController) {
+        return res.status(503).json({ error: 'Virtual camera controller not available' });
+      }
+      await obsServices.VirtualCamController.stop();
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Automation endpoints
+  context.web.registerRoute('GET', '/api/obs/automation', async function(req, res) {
+    try {
+      const rules = automationEngine.getRules();
+      res.json({ success: true, rules: Array.from(rules.values()) });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  context.web.registerRoute('POST', '/api/obs/automation', async function(req, res) {
+    try {
+      const rule = req.body;
+      const ruleId = automationEngine.registerRule(rule);
+      await saveRulesToStorage(context);
+      res.json({ success: true, ruleId: ruleId });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  context.web.registerRoute('DELETE', '/api/obs/automation/:id', async function(req, res) {
+    try {
+      const deleted = automationEngine.unregisterRule(req.params.id);
+      if (deleted) {
+        await saveRulesToStorage(context);
+        res.json({ success: true });
+      } else {
+        res.status(404).json({ error: 'Rule not found' });
+      }
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+}
+
+/**
+ * Register WebSocket handler for real-time updates
+ */
+function registerWebSocketHandler(context, obsServices, automationEngine) {
+  context.web.registerWebSocket(function(ws, req) {
+    context.logger.info('WebSocket connection established');
+
+    // Send initial status
+    obsServices.getStatus().then(function(status) {
+      ws.send(JSON.stringify({ type: 'ServerStatus', data: status }));
+    }).catch(function(error) {
+      context.logger.error('Error getting status for WebSocket', { error: error.message });
+    });
+
+    // Handle incoming messages
+    ws.on('message', async function(data) {
+      try {
+        const message = JSON.parse(data.toString());
+        context.logger.debug('WebSocket message received', { type: message.type });
+
+        // Handle different message types
+        switch (message.type) {
+          case 'getServerStatus':
+            const status = await obsServices.getStatus();
+            ws.send(JSON.stringify({ type: 'ServerStatus', data: status }));
+            break;
+
+          case 'SetCurrentProfile':
+            if (obsServices.ProfileController) {
+              await obsServices.ProfileController.setProfile(message.data.profileName);
+              ws.send(JSON.stringify({ type: 'Success', message: 'Profile switched' }));
+            }
+            break;
+
+          case 'SetCurrentCollection':
+            if (obsServices.SceneCollectionController) {
+              await obsServices.SceneCollectionController.setCollection(message.data.collectionName);
+              ws.send(JSON.stringify({ type: 'Success', message: 'Collection switched' }));
+            }
+            break;
+
+          case 'StartReplayBuffer':
+            if (obsServices.ReplayBufferController) {
+              await obsServices.ReplayBufferController.start();
+              ws.send(JSON.stringify({ type: 'Success', message: 'Replay buffer started' }));
+            }
+            break;
+
+          case 'StopReplayBuffer':
+            if (obsServices.ReplayBufferController) {
+              await obsServices.ReplayBufferController.stop();
+              ws.send(JSON.stringify({ type: 'Success', message: 'Replay buffer stopped' }));
+            }
+            break;
+
+          case 'SaveReplayBuffer':
+            if (obsServices.ReplayBufferController) {
+              await obsServices.ReplayBufferController.save();
+              ws.send(JSON.stringify({ type: 'Success', message: 'Replay buffer saved' }));
+            }
+            break;
+
+          case 'StartVirtualCamera':
+            if (obsServices.VirtualCamController) {
+              await obsServices.VirtualCamController.start();
+              ws.send(JSON.stringify({ type: 'Success', message: 'Virtual camera started' }));
+            }
+            break;
+
+          case 'StopVirtualCamera':
+            if (obsServices.VirtualCamController) {
+              await obsServices.VirtualCamController.stop();
+              ws.send(JSON.stringify({ type: 'Success', message: 'Virtual camera stopped' }));
+            }
+            break;
+
+          default:
+            ws.send(JSON.stringify({ type: 'Error', errorMessage: 'Unknown message type: ' + message.type }));
+        }
+      } catch (error) {
+        context.logger.error('WebSocket message handling error', { error: error.message });
+        ws.send(JSON.stringify({ type: 'Error', errorMessage: 'Failed to process message' }));
+      }
+    });
+
+    ws.on('close', function() {
+      context.logger.info('WebSocket connection closed');
+    });
+
+    ws.on('error', function(error) {
+      context.logger.error('WebSocket error', { error: error.message });
+    });
+  });
+}
+
 module.exports = {
   name: 'obs-control',
   version: '1.0.0',
@@ -1264,40 +1577,25 @@ module.exports = {
       // Store API in context for other modules
       context.obsApi = getPublicAPI(context);
 
-      // Start UI server (SvelteKit) if enabled
-      if (context.config.enableUI !== false) {
+      // Register web UI if context.web API is available
+      if (context.web) {
         try {
-          const uiPort = context.config.uiPort || 5174;
-          const { spawn } = require('child_process');
-          const path = require('path');
-          
-          context.logger.info('Starting OBS Control UI server', { port: uiPort });
-          
-          const modulePath = __dirname;
-          const uiServer = spawn('npm', ['run', 'dev', '--', '--port', uiPort.toString()], {
-            cwd: modulePath,
-            shell: true,
-            env: { ...process.env, OBS_MODULE_PORT: uiPort.toString() }
-          });
-          
-          uiServer.stdout.on('data', (data) => {
-            context.logger.info(`[UI] ${data.toString().trim()}`);
-          });
-          
-          uiServer.stderr.on('data', (data) => {
-            context.logger.warn(`[UI] ${data.toString().trim()}`);
-          });
-          
-          uiServer.on('error', (error) => {
-            context.logger.error('UI server error', { error: error.message });
-          });
-          
-          // Store UI server ref for cleanup
-          moduleContext.uiServer = uiServer;
-          
-          context.logger.info(`OBS Control UI available at http://localhost:${uiPort}`);
+          context.logger.info('Registering OBS Control web UI');
+
+          // Serve static UI files from build directory
+          context.web.serveStatic('/', './build');
+
+          // Register API endpoints
+          registerAPIRoutes(context, obsServices, automationEngine);
+
+          // Register WebSocket handler for real-time updates
+          if (context.web.registerWebSocket) {
+            registerWebSocketHandler(context, obsServices, automationEngine);
+          }
+
+          context.logger.info(`OBS Control UI available at ${context.web.getBaseUrl()}`);
         } catch (uiError) {
-          context.logger.error('Failed to start UI server', { error: uiError.message });
+          context.logger.error('Failed to register web UI', { error: uiError.message });
           // Don't throw - UI is optional, backend should still work
         }
       }
@@ -1319,19 +1617,8 @@ module.exports = {
   stop: function() {
     if (moduleContext) {
       moduleContext.logger.info('OBS Control module stopping');
-      
-      // Stop UI server if running
-      if (moduleContext.uiServer) {
-        try {
-          moduleContext.logger.info('Stopping UI server');
-          moduleContext.uiServer.kill('SIGTERM');
-          moduleContext.uiServer = null;
-        } catch (error) {
-          moduleContext.logger.error('Error stopping UI server', { error: error.message });
-        }
-      }
     }
-    
+
     // Clear references (cleanup is synchronous for simple engines)
     if (automationEngine && automationEngine.rules) {
       automationEngine.rules.clear();
@@ -1340,22 +1627,22 @@ module.exports = {
     if (alertEngine && alertEngine.activeAlerts) {
       alertEngine.activeAlerts.clear();
     }
-    
+
     // Mark as disconnected
     if (obsServices) {
       obsServices.connected = false;
     }
-    
+
     // Clear module state
     obsServices = null;
     alertEngine = null;
     automationEngine = null;
     isConnected = false;
-    
-    // Clear shared context for SvelteKit
+
+    // Clear shared context
     const sharedContext = require('./src/shared-context.js');
     sharedContext.clearModuleContext();
-    
+
     moduleContext = null;
   },
 

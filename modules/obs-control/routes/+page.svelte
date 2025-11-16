@@ -78,6 +78,13 @@
 				</button>
 			{/each}
 		</nav>
+
+		<div class="sidebar-footer">
+			<a href="/modules" class="nav-item return-btn">
+				<span class="nav-icon">←</span>
+				<span class="nav-label">Back to Core</span>
+			</a>
+		</div>
 	</aside>
 
 	<!-- Main Content Area -->
@@ -232,6 +239,11 @@
 		padding: 0.5rem 0;
 	}
 
+	.sidebar-footer {
+		padding: 0.5rem;
+		border-top: 1px solid #26262c;
+	}
+
 	.nav-item {
 		display: flex;
 		align-items: center;
@@ -267,6 +279,22 @@
 
 	.nav-label {
 		flex: 1;
+	}
+
+	.return-btn {
+		color: #adadb8;
+		text-decoration: none;
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.75rem 1rem;
+		font-weight: 500;
+		transition: all 0.15s ease;
+	}
+
+	.return-btn:hover {
+		background: #1f1f23;
+		color: #efeff1;
 	}
 
 	/* Main Container */

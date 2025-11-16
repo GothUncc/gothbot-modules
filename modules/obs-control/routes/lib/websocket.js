@@ -21,7 +21,8 @@ export function initializeWebSocket() {
 	}
 
 	const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-	const wsUrl = `${protocol}//${window.location.host}/api/obs/websocket`;
+	// Use relative path to work with module-ui URL pattern
+	const wsUrl = `${protocol}//${window.location.host}${window.location.pathname}ws`.replace(/\/+$/, '/ws');
 
 	try {
 		socket = new WebSocket(wsUrl);

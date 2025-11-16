@@ -17,10 +17,9 @@ const config = {
 			strict: false
 		}),
 
-		// Use relative paths for assets so it works regardless of base URL
+		// Set base path for module UI - will be served from /module-ui/obs-master-control
 		paths: {
-			base: '',
-			relative: true
+			base: process.env.PUBLIC_BASE_PATH || ''
 		},
 
 		// Routes directory

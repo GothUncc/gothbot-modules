@@ -3,20 +3,11 @@
 	import { connectionStatus } from './stores/obsStatus.js';
 	import { initializeWebSocket } from './lib/websocket.js';
 
-	// OBS State
-	let scenes = ['Main Scene', 'BRB Screen', 'Ending Screen'];
-	let currentScene = 'Main Scene';
-	let sources = [
-		{ name: 'Webcam', visible: true, locked: false, type: 'input' },
-		{ name: 'Desktop Audio', visible: true, locked: false, type: 'input' },
-		{ name: 'GothBot Overlay', visible: true, locked: false, type: 'browser' },
-		{ name: 'Game Capture', visible: false, locked: false, type: 'game' }
-	];
-	let audioSources = [
-		{ name: 'Desktop Audio', volume: 75, muted: false, monitoring: 'none', peak: 0, channels: 2 },
-		{ name: 'Microphone', volume: 90, muted: false, monitoring: 'monitor_only', peak: 0, channels: 1 },
-		{ name: 'Music', volume: 60, muted: true, monitoring: 'none', peak: 0, channels: 2 }
-	];
+	// OBS State - NOW REAL DATA
+	let scenes = [];
+	let currentScene = '';
+	let sources = [];
+	let audioSources = [];
 	
 	let streaming = false;
 	let recording = false;
@@ -28,119 +19,307 @@
 	let transitionDuration = 300;
 	
 	let stats = { 
-		cpu: 1.3, 
-		fps: 60.00, 
+		cpu: 0, 
+		fps: 0, 
 		dropped: 0, 
 		kbps: 0,
 		renderTime: '0.0 ms',
 		encodingTime: '0.0 ms'
 	};
 
-	// Simulate audio level updates
+	let refreshInterval;
 	let audioInterval;
 
-	onMount(() => {
+	onMount(async () => {
 		initializeWebSocket();
 		
-		// Simulate audio levels
+		// Load initial data
+		await loadAllData();
+		
+		// Refresh every 2 seconds
+		refreshInterval = setInterval(loadAllData, 2000);
+		
+		// Simulate audio levels (real levels would need WebSocket events)
 		audioInterval = setInterval(() => {
 			audioSources = audioSources.map(source => ({
 				...source,
 				peak: source.muted ? 0 : Math.random() * source.volume
 			}));
 		}, 100);
-		
-		// TODO: Load actual OBS state from API
-		// TODO: Subscribe to OBS events
 	});
 
 	onDestroy(() => {
+		if (refreshInterval) clearInterval(refreshInterval);
 		if (audioInterval) clearInterval(audioInterval);
 	});
 
-	// Scene Management
-	function selectScene(scene) {
-		currentScene = scene;
-		// TODO: Call context.obs.call('SetCurrentProgramScene', { sceneName: scene })
-	}
-
-	function addScene() {
-		const newScene = prompt('Enter scene name:');
-		if (newScene && !scenes.includes(newScene)) {
-			scenes = [...scenes, newScene];
-			// TODO: Call context.obs.call('CreateScene', { sceneName: newScene })
+	async function loadAllData() {
+		try {
+			await Promise.all([
+				loadScenes(),
+				loadSources(),
+				loadAudioSources(),
+				loadControls()
+			]);
+		} catch (error) {
+			console.error('Failed to load OBS data:', error);
 		}
 	}
 
-	function removeScene() {
+	async function loadScenes() {
+		try {
+			const response = await fetch('/api/obs/scenes');
+			const data = await response.json();
+			scenes = data.scenes.map(s => s.sceneName || s.name);
+			currentScene = data.currentScene;
+		} catch (error) {
+			console.error('Failed to load scenes:', error);
+		}
+	}
+
+	async function loadSources() {
+		if (!currentScene) return;
+		try {
+			const response = await fetch(`/api/obs/sources?scene=${encodeURIComponent(currentScene)}`);
+			const data = await response.json();
+			sources = data.sources.map(s => ({
+				name: s.sourceName,
+				visible: s.sceneItemEnabled,
+				locked: s.sceneItemLocked,
+				type: s.sourceType || 'input',
+				sceneItemId: s.sceneItemId
+			}));
+		} catch (error) {
+			console.error('Failed to load sources:', error);
+		}
+	}
+
+	async function loadAudioSources() {
+		try {
+			const response = await fetch('/api/obs/audio');
+			const data = await response.json();
+			audioSources = data.audioSources.map(s => ({
+				...s,
+				peak: s.muted ? 0 : s.volume
+			}));
+		} catch (error) {
+			console.error('Failed to load audio sources:', error);
+		}
+	}
+
+	async function loadControls() {
+		try {
+			const response = await fetch('/api/obs/controls');
+			const data = await response.json();
+			streaming = data.streaming;
+			recording = data.recording;
+			virtualCam = data.virtualCam;
+			replayBuffer = data.replayBuffer;
+			stats = data.stats;
+		} catch (error) {
+			console.error('Failed to load controls:', error);
+		}
+	}
+
+	// Scene Management
+	async function selectScene(scene) {
+		try {
+			await fetch('/api/obs/scenes', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'setCurrentScene', sceneName: scene })
+			});
+			currentScene = scene;
+			await loadSources();
+		} catch (error) {
+			console.error('Failed to set scene:', error);
+			alert('Failed to switch scene: ' + error.message);
+		}
+	}
+
+	async function addScene() {
+		const newScene = prompt('Enter scene name:');
+		if (!newScene) return;
+		
+		try {
+			await fetch('/api/obs/scenes', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'createScene', sceneName: newScene })
+			});
+			await loadScenes();
+		} catch (error) {
+			console.error('Failed to create scene:', error);
+			alert('Failed to create scene: ' + error.message);
+		}
+	}
+
+	async function removeScene() {
 		if (scenes.length <= 1) {
 			alert('Cannot remove the last scene');
 			return;
 		}
 		const confirmed = confirm(`Remove scene "${currentScene}"?`);
-		if (confirmed) {
-			scenes = scenes.filter(s => s !== currentScene);
-			currentScene = scenes[0];
-			// TODO: Call context.obs.call('RemoveScene', { sceneName: currentScene })
+		if (!confirmed) return;
+		
+		try {
+			await fetch('/api/obs/scenes', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'removeScene', sceneName: currentScene })
+			});
+			await loadScenes();
+		} catch (error) {
+			console.error('Failed to remove scene:', error);
+			alert('Failed to remove scene: ' + error.message);
 		}
 	}
 
 	// Source Management
-	function toggleSourceVisibility(index) {
-		sources[index].visible = !sources[index].visible;
-		sources = sources;
-		// TODO: Call context.obs.call('SetSceneItemEnabled', { sceneName: currentScene, sceneItemId: index, sceneItemEnabled: sources[index].visible })
+	async function toggleSourceVisibility(index) {
+		const source = sources[index];
+		try {
+			await fetch('/api/obs/sources', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ 
+					action: 'setVisibility', 
+					sceneName: currentScene, 
+					sceneItemId: source.sceneItemId, 
+					enabled: !source.visible 
+				})
+			});
+			sources[index].visible = !source.visible;
+			sources = sources;
+		} catch (error) {
+			console.error('Failed to toggle visibility:', error);
+		}
 	}
 
-	function toggleSourceLock(index) {
-		sources[index].locked = !sources[index].locked;
-		sources = sources;
-		// TODO: Call context.obs.call('SetSceneItemLocked', { sceneName: currentScene, sceneItemId: index, sceneItemLocked: sources[index].locked })
+	async function toggleSourceLock(index) {
+		const source = sources[index];
+		try {
+			await fetch('/api/obs/sources', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ 
+					action: 'setLocked', 
+					sceneName: currentScene, 
+					sceneItemId: source.sceneItemId, 
+					locked: !source.locked 
+				})
+			});
+			sources[index].locked = !source.locked;
+			sources = sources;
+		} catch (error) {
+			console.error('Failed to toggle lock:', error);
+		}
 	}
 
 	// Audio Control
-	function toggleMute(index) {
-		audioSources[index].muted = !audioSources[index].muted;
-		audioSources = audioSources;
-		// TODO: Call context.obs.call('SetInputMute', { inputName: audioSources[index].name, inputMuted: audioSources[index].muted })
+	async function toggleMute(index) {
+		const source = audioSources[index];
+		try {
+			await fetch('/api/obs/audio', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ 
+					action: 'toggleMute', 
+					inputName: source.name 
+				})
+			});
+			audioSources[index].muted = !source.muted;
+			audioSources = audioSources;
+		} catch (error) {
+			console.error('Failed to toggle mute:', error);
+		}
 	}
 
-	function updateVolume(index, event) {
+	async function updateVolume(index, event) {
 		const volume = parseInt(event.target.value);
-		audioSources[index].volume = volume;
-		audioSources = audioSources;
-		// TODO: Call context.obs.call('SetInputVolume', { inputName: audioSources[index].name, inputVolumeDb: volumeToDb(volume) })
-	}
-
-	function volumeToDb(percent) {
-		if (percent === 0) return -100;
-		return 20 * Math.log10(percent / 100);
+		const source = audioSources[index];
+		try {
+			await fetch('/api/obs/audio', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ 
+					action: 'setVolume', 
+					inputName: source.name, 
+					volume 
+				})
+			});
+			audioSources[index].volume = volume;
+			audioSources = audioSources;
+		} catch (error) {
+			console.error('Failed to set volume:', error);
+		}
 	}
 
 	// Streaming & Recording
 	async function toggleStreaming() {
-		streaming = !streaming;
-		// TODO: Call context.obs.call(streaming ? 'StartStream' : 'StopStream')
+		try {
+			await fetch('/api/obs/controls', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'toggleStreaming' })
+			});
+			await loadControls();
+		} catch (error) {
+			console.error('Failed to toggle streaming:', error);
+			alert('Failed to toggle streaming: ' + error.message);
+		}
 	}
 
 	async function toggleRecording() {
-		recording = !recording;
-		// TODO: Call context.obs.call(recording ? 'StartRecord' : 'StopRecord')
+		try {
+			await fetch('/api/obs/controls', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'toggleRecording' })
+			});
+			await loadControls();
+		} catch (error) {
+			console.error('Failed to toggle recording:', error);
+			alert('Failed to toggle recording: ' + error.message);
+		}
 	}
 
 	async function toggleVirtualCam() {
-		virtualCam = !virtualCam;
-		// TODO: Call context.obs.call(virtualCam ? 'StartVirtualCam' : 'StopVirtualCam')
+		try {
+			await fetch('/api/obs/controls', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'toggleVirtualCam' })
+			});
+			await loadControls();
+		} catch (error) {
+			console.error('Failed to toggle virtual camera:', error);
+			alert('Failed to toggle virtual camera: ' + error.message);
+		}
 	}
 
 	async function toggleStudioMode() {
-		studioMode = !studioMode;
-		// TODO: Call context.obs.call('SetStudioModeEnabled', { studioModeEnabled: studioMode })
+		try {
+			// TODO: Implement studio mode API endpoint
+			studioMode = !studioMode;
+			alert('Studio mode not yet implemented');
+		} catch (error) {
+			console.error('Failed to toggle studio mode:', error);
+		}
 	}
 
 	async function toggleReplayBuffer() {
-		replayBuffer = !replayBuffer;
-		// TODO: Call context.obs.call(replayBuffer ? 'StartReplayBuffer' : 'StopReplayBuffer')
+		try {
+			await fetch('/api/obs/controls', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'toggleReplayBuffer' })
+			});
+			await loadControls();
+		} catch (error) {
+			console.error('Failed to toggle replay buffer:', error);
+			alert('Failed to toggle replay buffer: ' + error.message);
+		}
 	}
 
 	async function saveReplay() {
@@ -148,8 +327,17 @@
 			alert('Replay Buffer is not active');
 			return;
 		}
-		// TODO: Call context.obs.call('SaveReplayBuffer')
-		alert('Replay saved!');
+		try {
+			await fetch('/api/obs/controls', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'saveReplay' })
+			});
+			alert('Replay saved!');
+		} catch (error) {
+			console.error('Failed to save replay:', error);
+			alert('Failed to save replay: ' + error.message);
+		}
 	}
 </script>
 

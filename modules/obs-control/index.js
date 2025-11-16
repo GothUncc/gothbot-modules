@@ -21,31 +21,28 @@ class OBSModuleCore {
   async connect() {
     try {
       this.logger.info('Initializing OBS connection', {
-        host: this.config.host,
-        port: this.config.port,
-        hasInjectedService: !!this.obsCore
+        hasAPI: !!this.obsCore
       });
 
       if (this.obsCore) {
-        this.logger.info('Using bot OBS service');
+        // Check if OBS is connected via Core's API
+        this.connected = this.obsCore.isConnected();
         
-        if (this.obsCore.on) {
-          this.obsCore.on('connected', () => this.handleOBSConnected());
-          this.obsCore.on('disconnected', () => this.handleOBSDisconnected());
-          this.obsCore.on('error', (err) => this.handleOBSError(err));
-        }
-        
-        this.connected = this.obsCore.isConnected?.() || false;
+        this.logger.info('Using Core OBS WebSocket API', {
+          connected: this.connected
+        });
         
         if (this.connected) {
           this.emit('connected');
         }
       } else {
-        this.logger.warn('No OBS service provided - running in standalone mode');
+        this.logger.error('No OBS API available from Core - module cannot function');
         this.connected = false;
       }
       
-      this.logger.info('OBS Module Core initialized');
+      this.logger.info('OBS Module Core initialized', {
+        connected: this.connected
+      });
     } catch (error) {
       this.logger.error('Failed to initialize OBS connection', {
         error: error.message,
@@ -176,6 +173,254 @@ class OBSModuleCore {
       return;
     }
     this.logger.warn('playMedia not available', { source: sourceName });
+  }
+
+  // Audio Mixer Control
+  async setInputVolume(inputName, volumeDb) {
+    this.ensureConnected();
+    await this.obsCore.call('SetInputVolume', { inputName, inputVolumeDb: volumeDb });
+    this.logger.info('Input volume set', { input: inputName, volumeDb });
+  }
+
+  async getInputVolume(inputName) {
+    this.ensureConnected();
+    const response = await this.obsCore.call('GetInputVolume', { inputName });
+    return response;
+  }
+
+  async setInputMute(inputName, inputMuted) {
+    this.ensureConnected();
+    await this.obsCore.call('SetInputMute', { inputName, inputMuted });
+    this.logger.info('Input mute set', { input: inputName, muted: inputMuted });
+  }
+
+  async getInputMute(inputName) {
+    this.ensureConnected();
+    const response = await this.obsCore.call('GetInputMute', { inputName });
+    return response.inputMuted;
+  }
+
+  async toggleInputMute(inputName) {
+    this.ensureConnected();
+    await this.obsCore.call('ToggleInputMute', { inputName });
+    this.logger.info('Input mute toggled', { input: inputName });
+  }
+
+  async setInputAudioMonitorType(inputName, monitorType) {
+    this.ensureConnected();
+    await this.obsCore.call('SetInputAudioMonitorType', { inputName, monitorType });
+    this.logger.info('Audio monitor type set', { input: inputName, monitorType });
+  }
+
+  // Scene & Scene Items
+  async createScene(sceneName) {
+    this.ensureConnected();
+    await this.obsCore.call('CreateScene', { sceneName });
+    this.logger.info('Scene created', { sceneName });
+  }
+
+  async removeScene(sceneName) {
+    this.ensureConnected();
+    await this.obsCore.call('RemoveScene', { sceneName });
+    this.logger.info('Scene removed', { sceneName });
+  }
+
+  async getSceneItemList(sceneName) {
+    this.ensureConnected();
+    const response = await this.obsCore.call('GetSceneItemList', { sceneName });
+    return response.sceneItems;
+  }
+
+  async setSceneItemEnabled(sceneName, sceneItemId, sceneItemEnabled) {
+    this.ensureConnected();
+    await this.obsCore.call('SetSceneItemEnabled', { sceneName, sceneItemId, sceneItemEnabled });
+    this.logger.info('Scene item enabled state set', { sceneName, sceneItemId, enabled: sceneItemEnabled });
+  }
+
+  async setSceneItemTransform(sceneName, sceneItemId, transform) {
+    this.ensureConnected();
+    await this.obsCore.call('SetSceneItemTransform', { sceneName, sceneItemId, sceneItemTransform: transform });
+    this.logger.info('Scene item transform set', { sceneName, sceneItemId });
+  }
+
+  async getSceneItemTransform(sceneName, sceneItemId) {
+    this.ensureConnected();
+    const response = await this.obsCore.call('GetSceneItemTransform', { sceneName, sceneItemId });
+    return response.sceneItemTransform;
+  }
+
+  async getInputList() {
+    this.ensureConnected();
+    const response = await this.obsCore.call('GetInputList');
+    return response.inputs;
+  }
+
+  async getSourceActive(sourceName) {
+    this.ensureConnected();
+    const response = await this.obsCore.call('GetSourceActive', { sourceName });
+    return response;
+  }
+
+  // Streaming & Recording Extensions
+  async toggleStream() {
+    this.ensureConnected();
+    await this.obsCore.call('ToggleStream');
+    this.logger.info('Stream toggled');
+  }
+
+  async toggleRecord() {
+    this.ensureConnected();
+    await this.obsCore.call('ToggleRecord');
+    this.logger.info('Recording toggled');
+  }
+
+  async pauseRecord() {
+    this.ensureConnected();
+    await this.obsCore.call('PauseRecord');
+    this.logger.info('Recording paused');
+  }
+
+  async resumeRecord() {
+    this.ensureConnected();
+    await this.obsCore.call('ResumeRecord');
+    this.logger.info('Recording resumed');
+  }
+
+  // Filters
+  async createSourceFilter(sourceName, filterName, filterKind, filterSettings) {
+    this.ensureConnected();
+    await this.obsCore.call('CreateSourceFilter', { sourceName, filterName, filterKind, filterSettings });
+    this.logger.info('Source filter created', { sourceName, filterName, filterKind });
+  }
+
+  async removeSourceFilter(sourceName, filterName) {
+    this.ensureConnected();
+    await this.obsCore.call('RemoveSourceFilter', { sourceName, filterName });
+    this.logger.info('Source filter removed', { sourceName, filterName });
+  }
+
+  async setSourceFilterEnabled(sourceName, filterName, filterEnabled) {
+    this.ensureConnected();
+    await this.obsCore.call('SetSourceFilterEnabled', { sourceName, filterName, filterEnabled });
+    this.logger.info('Source filter enabled state set', { sourceName, filterName, enabled: filterEnabled });
+  }
+
+  async getSourceFilterList(sourceName) {
+    this.ensureConnected();
+    const response = await this.obsCore.call('GetSourceFilterList', { sourceName });
+    return response.filters;
+  }
+
+  async setSourceFilterSettings(sourceName, filterName, filterSettings) {
+    this.ensureConnected();
+    await this.obsCore.call('SetSourceFilterSettings', { sourceName, filterName, filterSettings });
+    this.logger.info('Source filter settings updated', { sourceName, filterName });
+  }
+
+  // Inputs
+  async createInput(sceneName, inputName, inputKind, inputSettings) {
+    this.ensureConnected();
+    await this.obsCore.call('CreateInput', { sceneName, inputName, inputKind, inputSettings });
+    this.logger.info('Input created', { sceneName, inputName, inputKind });
+  }
+
+  async removeInput(inputName) {
+    this.ensureConnected();
+    await this.obsCore.call('RemoveInput', { inputName });
+    this.logger.info('Input removed', { inputName });
+  }
+
+  async setInputSettings(inputName, inputSettings) {
+    this.ensureConnected();
+    await this.obsCore.call('SetInputSettings', { inputName, inputSettings });
+    this.logger.info('Input settings updated', { inputName });
+  }
+
+  async getInputSettings(inputName) {
+    this.ensureConnected();
+    const response = await this.obsCore.call('GetInputSettings', { inputName });
+    return response;
+  }
+
+  async setInputName(inputName, newInputName) {
+    this.ensureConnected();
+    await this.obsCore.call('SetInputName', { inputName, newInputName });
+    this.logger.info('Input renamed', { oldName: inputName, newName: newInputName });
+  }
+
+  // Transitions & Studio Mode
+  async getSceneTransitionList() {
+    this.ensureConnected();
+    const response = await this.obsCore.call('GetSceneTransitionList');
+    return response;
+  }
+
+  async getCurrentSceneTransition() {
+    this.ensureConnected();
+    const response = await this.obsCore.call('GetCurrentSceneTransition');
+    return response;
+  }
+
+  async setCurrentSceneTransition(transitionName) {
+    this.ensureConnected();
+    await this.obsCore.call('SetCurrentSceneTransition', { transitionName });
+    this.logger.info('Scene transition set', { transitionName });
+  }
+
+  async setCurrentSceneTransitionDuration(transitionDuration) {
+    this.ensureConnected();
+    await this.obsCore.call('SetCurrentSceneTransitionDuration', { transitionDuration });
+    this.logger.info('Scene transition duration set', { transitionDuration });
+  }
+
+  async getStudioModeEnabled() {
+    this.ensureConnected();
+    const response = await this.obsCore.call('GetStudioModeEnabled');
+    return response.studioModeEnabled;
+  }
+
+  async setStudioModeEnabled(studioModeEnabled) {
+    this.ensureConnected();
+    await this.obsCore.call('SetStudioModeEnabled', { studioModeEnabled });
+    this.logger.info('Studio mode set', { enabled: studioModeEnabled });
+  }
+
+  async triggerStudioModeTransition() {
+    this.ensureConnected();
+    await this.obsCore.call('TriggerStudioModeTransition');
+    this.logger.info('Studio mode transition triggered');
+  }
+
+  // Screenshots
+  async saveSourceScreenshot(sourceName, imageFormat, imageFilePath) {
+    this.ensureConnected();
+    await this.obsCore.call('SaveSourceScreenshot', { sourceName, imageFormat, imageFilePath });
+    this.logger.info('Screenshot saved', { sourceName, imageFilePath });
+  }
+
+  async getSourceScreenshot(sourceName, imageFormat) {
+    this.ensureConnected();
+    const response = await this.obsCore.call('GetSourceScreenshot', { sourceName, imageFormat });
+    return response.imageData;
+  }
+
+  // Text Sources & Visibility
+  async setInputText(inputName, inputText) {
+    this.ensureConnected();
+    await this.obsCore.call('SetInputSettings', { inputName, inputSettings: { text: inputText } });
+    this.logger.info('Text input updated', { inputName });
+  }
+
+  async getSceneItemId(sceneName, sourceName) {
+    this.ensureConnected();
+    const response = await this.obsCore.call('GetSceneItemId', { sceneName, sourceName });
+    return response.sceneItemId;
+  }
+
+  async setSceneItemLocked(sceneName, sceneItemId, sceneItemLocked) {
+    this.ensureConnected();
+    await this.obsCore.call('SetSceneItemLocked', { sceneName, sceneItemId, sceneItemLocked });
+    this.logger.info('Scene item lock state set', { sceneName, sceneItemId, locked: sceneItemLocked });
   }
 
   // Event handling
@@ -997,6 +1242,214 @@ function getPublicAPI(context) {
     getRecordingStats: async function() {
       if (!obsServices) throw new Error('OBS services not initialized');
       return await obsServices.getRecordingStats();
+    },
+
+    // Audio Mixer API
+    setInputVolume: async function(inputName, volumeDb) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.setInputVolume(inputName, volumeDb);
+    },
+
+    getInputVolume: async function(inputName) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.getInputVolume(inputName);
+    },
+
+    setInputMute: async function(inputName, inputMuted) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.setInputMute(inputName, inputMuted);
+    },
+
+    getInputMute: async function(inputName) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.getInputMute(inputName);
+    },
+
+    toggleInputMute: async function(inputName) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.toggleInputMute(inputName);
+    },
+
+    setInputAudioMonitorType: async function(inputName, monitorType) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.setInputAudioMonitorType(inputName, monitorType);
+    },
+
+    // Scene Management API
+    createScene: async function(sceneName) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.createScene(sceneName);
+    },
+
+    removeScene: async function(sceneName) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.removeScene(sceneName);
+    },
+
+    getSceneItemList: async function(sceneName) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.getSceneItemList(sceneName);
+    },
+
+    setSceneItemEnabled: async function(sceneName, sceneItemId, sceneItemEnabled) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.setSceneItemEnabled(sceneName, sceneItemId, sceneItemEnabled);
+    },
+
+    setSceneItemTransform: async function(sceneName, sceneItemId, transform) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.setSceneItemTransform(sceneName, sceneItemId, transform);
+    },
+
+    getSceneItemTransform: async function(sceneName, sceneItemId) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.getSceneItemTransform(sceneName, sceneItemId);
+    },
+
+    getInputList: async function() {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.getInputList();
+    },
+
+    getSourceActive: async function(sourceName) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.getSourceActive(sourceName);
+    },
+
+    // Streaming & Recording Extensions
+    toggleStreaming: async function() {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.toggleStream();
+    },
+
+    toggleRecording: async function() {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.toggleRecord();
+    },
+
+    pauseRecording: async function() {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.pauseRecord();
+    },
+
+    resumeRecording: async function() {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.resumeRecord();
+    },
+
+    // Filter API
+    createSourceFilter: async function(sourceName, filterName, filterKind, filterSettings) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.createSourceFilter(sourceName, filterName, filterKind, filterSettings);
+    },
+
+    removeSourceFilter: async function(sourceName, filterName) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.removeSourceFilter(sourceName, filterName);
+    },
+
+    setSourceFilterEnabled: async function(sourceName, filterName, filterEnabled) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.setSourceFilterEnabled(sourceName, filterName, filterEnabled);
+    },
+
+    getSourceFilterList: async function(sourceName) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.getSourceFilterList(sourceName);
+    },
+
+    setSourceFilterSettings: async function(sourceName, filterName, filterSettings) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.setSourceFilterSettings(sourceName, filterName, filterSettings);
+    },
+
+    // Input API
+    createInput: async function(sceneName, inputName, inputKind, inputSettings) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.createInput(sceneName, inputName, inputKind, inputSettings);
+    },
+
+    removeInput: async function(inputName) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.removeInput(inputName);
+    },
+
+    setInputSettings: async function(inputName, inputSettings) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.setInputSettings(inputName, inputSettings);
+    },
+
+    getInputSettings: async function(inputName) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.getInputSettings(inputName);
+    },
+
+    setInputName: async function(inputName, newInputName) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.setInputName(inputName, newInputName);
+    },
+
+    // Transition & Studio Mode API
+    getSceneTransitionList: async function() {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.getSceneTransitionList();
+    },
+
+    getCurrentSceneTransition: async function() {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.getCurrentSceneTransition();
+    },
+
+    setCurrentSceneTransition: async function(transitionName) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.setCurrentSceneTransition(transitionName);
+    },
+
+    setCurrentSceneTransitionDuration: async function(transitionDuration) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.setCurrentSceneTransitionDuration(transitionDuration);
+    },
+
+    getStudioModeEnabled: async function() {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.getStudioModeEnabled();
+    },
+
+    setStudioModeEnabled: async function(studioModeEnabled) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.setStudioModeEnabled(studioModeEnabled);
+    },
+
+    triggerStudioModeTransition: async function() {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.triggerStudioModeTransition();
+    },
+
+    // Screenshot API
+    saveSourceScreenshot: async function(sourceName, imageFormat, imageFilePath) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.saveSourceScreenshot(sourceName, imageFormat, imageFilePath);
+    },
+
+    getSourceScreenshot: async function(sourceName, imageFormat) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.getSourceScreenshot(sourceName, imageFormat);
+    },
+
+    // Text & Visibility API
+    setInputText: async function(inputName, inputText) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.setInputText(inputName, inputText);
+    },
+
+    getSceneItemId: async function(sceneName, sourceName) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.getSceneItemId(sceneName, sourceName);
+    },
+
+    setSceneItemLocked: async function(sceneName, sceneItemId, sceneItemLocked) {
+      if (!obsServices) throw new Error('OBS services not initialized');
+      return await obsServices.setSceneItemLocked(sceneName, sceneItemId, sceneItemLocked);
     }
   };
 }
@@ -1386,16 +1839,19 @@ module.exports = {
     });
 
     try {
-      // Get OBS service from bot if available
-      const obsServiceProvider = context.services && context.services.obs ? context.services.obs : null;
+      // Get OBS WebSocket API from bot context (v2.0.212+)
+      // context.obs provides: call(request, params), isConnected()
+      const obsAPI = context.obs || null;
       
-      if (obsServiceProvider) {
-        context.logger.info('Using bot OBS service');
+      if (obsAPI) {
+        context.logger.info('Using bot OBS WebSocket API', {
+          connected: obsAPI.isConnected()
+        });
       } else {
-        context.logger.warn('No OBS service provided by bot - running in standalone mode');
+        context.logger.warn('No OBS API available - module will not function');
       }
 
-      // Initialize OBS services wrapper
+      // Initialize OBS services wrapper with direct API access
       obsServices = new OBSModuleCore({
         host: context.config.host || 'localhost',
         port: context.config.port || 4455,
@@ -1403,7 +1859,7 @@ module.exports = {
         autoReconnect: context.config.autoReconnect !== false,
         reconnectDelay: context.config.reconnectDelay || 5000,
         logger: context.logger
-      }, context.logger, obsServiceProvider);
+      }, context.logger, obsAPI);
       
       await obsServices.connect();
 

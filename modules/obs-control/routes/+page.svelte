@@ -17,6 +17,7 @@
 	
 	let currentTransition = 'Fade';
 	let transitionDuration = 300;
+	let availableTransitions = [];
 	
 	let stats = { 
 		cpu: 0, 
@@ -26,6 +27,17 @@
 		renderTime: '0.0 ms',
 		encodingTime: '0.0 ms'
 	};
+
+	// Selected source for advanced controls
+	let selectedSource = null;
+	let sourceFilters = [];
+	let sourceTransform = null;
+	
+	// UI panels visibility
+	let showFiltersPanel = false;
+	let showTransformPanel = false;
+	let showTextEditor = false;
+	let showScreenshotPanel = false;
 
 	let refreshInterval;
 	let audioInterval;
@@ -59,7 +71,8 @@
 				loadScenes(),
 				loadSources(),
 				loadAudioSources(),
-				loadControls()
+				loadControls(),
+				loadTransitions()
 			]);
 		} catch (error) {
 			console.error('Failed to load OBS data:', error);
@@ -115,9 +128,22 @@
 			recording = data.recording;
 			virtualCam = data.virtualCam;
 			replayBuffer = data.replayBuffer;
+			studioMode = data.studioMode;
 			stats = data.stats;
 		} catch (error) {
 			console.error('Failed to load controls:', error);
+		}
+	}
+
+	async function loadTransitions() {
+		try {
+			const response = await fetch('/api/obs/transitions');
+			const data = await response.json();
+			availableTransitions = data.transitions || [];
+			currentTransition = data.currentTransition || 'Fade';
+			transitionDuration = data.currentDuration || 300;
+		} catch (error) {
+			console.error('Failed to load transitions:', error);
 		}
 	}
 
@@ -300,11 +326,15 @@
 
 	async function toggleStudioMode() {
 		try {
-			// TODO: Implement studio mode API endpoint
-			studioMode = !studioMode;
-			alert('Studio mode not yet implemented');
+			await fetch('/api/obs/controls', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'toggleStudioMode' })
+			});
+			await loadControls();
 		} catch (error) {
 			console.error('Failed to toggle studio mode:', error);
+			alert('Failed to toggle studio mode: ' + error.message);
 		}
 	}
 
@@ -337,6 +367,232 @@
 		} catch (error) {
 			console.error('Failed to save replay:', error);
 			alert('Failed to save replay: ' + error.message);
+		}
+	}
+
+	// Transitions
+	async function setTransition(transitionName) {
+		try {
+			await fetch('/api/obs/transitions', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'setTransition', transitionName })
+			});
+			currentTransition = transitionName;
+		} catch (error) {
+			console.error('Failed to set transition:', error);
+			alert('Failed to set transition: ' + error.message);
+		}
+	}
+
+	async function setTransitionDuration() {
+		try {
+			await fetch('/api/obs/transitions', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'setDuration', duration: transitionDuration })
+			});
+		} catch (error) {
+			console.error('Failed to set transition duration:', error);
+		}
+	}
+
+	// Source Selection & Filters
+	async function selectSource(source) {
+		selectedSource = source;
+		showFiltersPanel = true;
+		showTransformPanel = false;
+		showTextEditor = false;
+		showScreenshotPanel = false;
+		await loadFilters(source.name);
+	}
+
+	async function loadFilters(sourceName) {
+		try {
+			const response = await fetch(`/api/obs/filters?sourceName=${encodeURIComponent(sourceName)}`);
+			const data = await response.json();
+			sourceFilters = data.filters || [];
+		} catch (error) {
+			console.error('Failed to load filters:', error);
+		}
+	}
+
+	async function addFilter() {
+		if (!selectedSource) return;
+		const filterName = prompt('Enter filter name:');
+		if (!filterName) return;
+		
+		const filterKind = prompt('Enter filter kind (e.g., color_filter, mask_filter, gain_filter):');
+		if (!filterKind) return;
+		
+		try {
+			await fetch('/api/obs/filters', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ 
+					action: 'create', 
+					sourceName: selectedSource.name, 
+					filterName, 
+					filterKind 
+				})
+			});
+			await loadFilters(selectedSource.name);
+		} catch (error) {
+			console.error('Failed to add filter:', error);
+			alert('Failed to add filter: ' + error.message);
+		}
+	}
+
+	async function removeFilter(filterName) {
+		if (!selectedSource) return;
+		const confirmed = confirm(`Remove filter "${filterName}"?`);
+		if (!confirmed) return;
+		
+		try {
+			await fetch('/api/obs/filters', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ 
+					action: 'remove', 
+					sourceName: selectedSource.name, 
+					filterName 
+				})
+			});
+			await loadFilters(selectedSource.name);
+		} catch (error) {
+			console.error('Failed to remove filter:', error);
+			alert('Failed to remove filter: ' + error.message);
+		}
+	}
+
+	async function toggleFilter(filterName, enabled) {
+		if (!selectedSource) return;
+		try {
+			await fetch('/api/obs/filters', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ 
+					action: 'setEnabled', 
+					sourceName: selectedSource.name, 
+					filterName, 
+					enabled 
+				})
+			});
+		} catch (error) {
+			console.error('Failed to toggle filter:', error);
+		}
+	}
+
+	// Transform Controls
+	async function showTransformControls(source) {
+		selectedSource = source;
+		showTransformPanel = true;
+		showFiltersPanel = false;
+		showTextEditor = false;
+		showScreenshotPanel = false;
+		await loadTransform(source);
+	}
+
+	async function loadTransform(source) {
+		try {
+			const response = await fetch(`/api/obs/transforms?sceneName=${encodeURIComponent(currentScene)}&sceneItemId=${source.sceneItemId}`);
+			const data = await response.json();
+			sourceTransform = data.transform || {};
+		} catch (error) {
+			console.error('Failed to load transform:', error);
+		}
+	}
+
+	async function updateTransform() {
+		if (!selectedSource || !sourceTransform) return;
+		try {
+			await fetch('/api/obs/transforms', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ 
+					sceneName: currentScene, 
+					sceneItemId: selectedSource.sceneItemId, 
+					transform: sourceTransform 
+				})
+			});
+			alert('Transform updated!');
+		} catch (error) {
+			console.error('Failed to update transform:', error);
+			alert('Failed to update transform: ' + error.message);
+		}
+	}
+
+	// Screenshot
+	async function showScreenshotControls(source) {
+		selectedSource = source;
+		showScreenshotPanel = true;
+		showFiltersPanel = false;
+		showTransformPanel = false;
+		showTextEditor = false;
+	}
+
+	async function takeScreenshot() {
+		if (!selectedSource) return;
+		const filePath = prompt('Enter save path (e.g., C:/screenshots/capture.png):');
+		if (!filePath) return;
+		
+		try {
+			await fetch('/api/obs/screenshots', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ 
+					action: 'save', 
+					sourceName: selectedSource.name, 
+					imageFilePath: filePath, 
+					imageFormat: 'png' 
+				})
+			});
+			alert(`Screenshot saved to ${filePath}`);
+		} catch (error) {
+			console.error('Failed to take screenshot:', error);
+			alert('Failed to take screenshot: ' + error.message);
+		}
+	}
+
+	// Text Source Editing
+	async function showTextEdit(source) {
+		selectedSource = source;
+		showTextEditor = true;
+		showFiltersPanel = false;
+		showTransformPanel = false;
+		showScreenshotPanel = false;
+		await loadInputSettings(source.name);
+	}
+
+	async function loadInputSettings(inputName) {
+		try {
+			const response = await fetch(`/api/obs/inputs?inputName=${encodeURIComponent(inputName)}`);
+			const data = await response.json();
+			if (data.settings && data.settings.text) {
+				// Store text in selectedSource for editing
+				selectedSource.text = data.settings.text;
+			}
+		} catch (error) {
+			console.error('Failed to load input settings:', error);
+		}
+	}
+
+	async function updateText() {
+		if (!selectedSource) return;
+		try {
+			await fetch('/api/obs/inputs', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ 
+					action: 'setSettings', 
+					inputName: selectedSource.name, 
+					inputSettings: { text: selectedSource.text } 
+				})
+			});
+			alert('Text updated!');
+		} catch (error) {
+			console.error('Failed to update text:', error);
+			alert('Failed to update text: ' + error.message);
 		}
 	}
 </script>
@@ -456,6 +712,14 @@
 						</button>
 						<span class="source-name">{source.name}</span>
 						<span class="source-type">{source.type}</span>
+						<div class="source-actions">
+							<button class="action-btn" on:click={() => selectSource(source)} title="Filters">🎨</button>
+							<button class="action-btn" on:click={() => showTransformControls(source)} title="Transform">📐</button>
+							<button class="action-btn" on:click={() => showScreenshotControls(source)} title="Screenshot">📷</button>
+							{#if source.type === 'text_gdiplus' || source.type === 'text_ft2_source'}
+								<button class="action-btn" on:click={() => showTextEdit(source)} title="Edit Text">📝</button>
+							{/if}
+						</div>
 					</div>
 				{/each}
 			</div>
@@ -507,17 +771,17 @@
 		<div class="transitions-panel">
 			<div class="panel-title">Scene Transitions</div>
 			<div class="transition-controls">
-				<select class="transition-select" bind:value={currentTransition}>
-					<option>Fade</option>
-					<option>Cut</option>
-					<option>Stinger</option>
-					<option>Fade to Color</option>
+				<select class="transition-select" value={currentTransition} on:change={(e) => setTransition(e.target.value)}>
+					{#each availableTransitions as transition}
+						<option value={transition.transitionName}>{transition.transitionName}</option>
+					{/each}
 				</select>
 				<label class="duration-label">
 					Duration:
 					<input 
 						type="number" 
 						bind:value={transitionDuration}
+						on:change={setTransitionDuration}
 						min="50"
 						max="2000"
 						step="50"
@@ -573,6 +837,103 @@
 			</button>
 		</div>
 	</div>
+
+	<!-- Advanced Controls Side Panels -->
+	{#if showFiltersPanel && selectedSource}
+		<div class="side-panel filters-panel-side">
+			<div class="side-panel-header">
+				<h3>Filters: {selectedSource.name}</h3>
+				<button class="close-btn" on:click={() => showFiltersPanel = false}>✕</button>
+			</div>
+			<div class="side-panel-content">
+				<button class="add-btn" on:click={addFilter}>+ Add Filter</button>
+				{#each sourceFilters as filter}
+					<div class="filter-item">
+						<input 
+							type="checkbox" 
+							checked={filter.filterEnabled} 
+							on:change={(e) => toggleFilter(filter.filterName, e.target.checked)}
+						/>
+						<span class="filter-name">{filter.filterName}</span>
+						<button class="remove-btn" on:click={() => removeFilter(filter.filterName)}>🗑️</button>
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/if}
+
+	{#if showTransformPanel && selectedSource && sourceTransform}
+		<div class="side-panel transform-panel-side">
+			<div class="side-panel-header">
+				<h3>Transform: {selectedSource.name}</h3>
+				<button class="close-btn" on:click={() => showTransformPanel = false}>✕</button>
+			</div>
+			<div class="side-panel-content">
+				<div class="transform-controls">
+					<label>
+						Position X:
+						<input type="number" bind:value={sourceTransform.positionX} />
+					</label>
+					<label>
+						Position Y:
+						<input type="number" bind:value={sourceTransform.positionY} />
+					</label>
+					<label>
+						Scale X:
+						<input type="number" step="0.1" bind:value={sourceTransform.scaleX} />
+					</label>
+					<label>
+						Scale Y:
+						<input type="number" step="0.1" bind:value={sourceTransform.scaleY} />
+					</label>
+					<label>
+						Rotation:
+						<input type="number" bind:value={sourceTransform.rotation} />
+					</label>
+					<label>
+						Width:
+						<input type="number" bind:value={sourceTransform.sourceWidth} />
+					</label>
+					<label>
+						Height:
+						<input type="number" bind:value={sourceTransform.sourceHeight} />
+					</label>
+					<button class="apply-btn" on:click={updateTransform}>Apply Transform</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	{#if showScreenshotPanel && selectedSource}
+		<div class="side-panel screenshot-panel-side">
+			<div class="side-panel-header">
+				<h3>Screenshot: {selectedSource.name}</h3>
+				<button class="close-btn" on:click={() => showScreenshotPanel = false}>✕</button>
+			</div>
+			<div class="side-panel-content">
+				<button class="screenshot-btn" on:click={takeScreenshot}>📷 Take Screenshot</button>
+				<p class="help-text">Click to save a screenshot of this source</p>
+			</div>
+		</div>
+	{/if}
+
+	{#if showTextEditor && selectedSource}
+		<div class="side-panel text-editor-panel">
+			<div class="side-panel-header">
+				<h3>Edit Text: {selectedSource.name}</h3>
+				<button class="close-btn" on:click={() => showTextEditor = false}>✕</button>
+			</div>
+			<div class="side-panel-content">
+				<textarea 
+					bind:value={selectedSource.text} 
+					rows="10" 
+					placeholder="Enter text..."
+					class="text-editor"
+				></textarea>
+				<button class="apply-btn" on:click={updateText}>Update Text</button>
+			</div>
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -1167,5 +1528,195 @@
 
 	::-webkit-scrollbar-thumb:hover {
 		background: #3a3a4a;
+	}
+
+	/* Source Actions */
+	.source-actions {
+		display: flex;
+		gap: 4px;
+		margin-left: auto;
+	}
+
+	.action-btn {
+		background: rgba(145, 71, 255, 0.2);
+		border: 1px solid rgba(145, 71, 255, 0.4);
+		color: #9147ff;
+		padding: 4px 8px;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 14px;
+	}
+
+	.action-btn:hover {
+		background: rgba(145, 71, 255, 0.4);
+	}
+
+	/* Side Panels */
+	.side-panel {
+		position: fixed;
+		right: 0;
+		top: 50px;
+		width: 400px;
+		height: calc(100vh - 50px);
+		background: #1f1f2e;
+		border-left: 2px solid #9147ff;
+		z-index: 1000;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.side-panel-header {
+		padding: 20px;
+		background: #13131a;
+		border-bottom: 1px solid #333;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.side-panel-header h3 {
+		margin: 0;
+		color: #9147ff;
+		font-size: 16px;
+	}
+
+	.close-btn {
+		background: rgba(233, 25, 22, 0.2);
+		border: 1px solid rgba(233, 25, 22, 0.4);
+		color: #e91916;
+		padding: 8px 12px;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 18px;
+	}
+
+	.close-btn:hover {
+		background: rgba(233, 25, 22, 0.4);
+	}
+
+	.side-panel-content {
+		flex: 1;
+		padding: 20px;
+		overflow-y: auto;
+	}
+
+	/* Filters Panel */
+	.add-btn {
+		width: 100%;
+		padding: 12px;
+		background: rgba(0, 245, 147, 0.2);
+		border: 1px solid rgba(0, 245, 147, 0.4);
+		color: #00f593;
+		border-radius: 4px;
+		cursor: pointer;
+		margin-bottom: 15px;
+		font-size: 14px;
+	}
+
+	.add-btn:hover {
+		background: rgba(0, 245, 147, 0.3);
+	}
+
+	.filter-item {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 10px;
+		background: rgba(255, 255, 255, 0.05);
+		border-radius: 4px;
+		margin-bottom: 8px;
+	}
+
+	.filter-name {
+		flex: 1;
+		color: #fff;
+	}
+
+	.remove-btn {
+		background: rgba(233, 25, 22, 0.2);
+		border: 1px solid rgba(233, 25, 22, 0.4);
+		color: #e91916;
+		padding: 4px 8px;
+		border-radius: 4px;
+		cursor: pointer;
+	}
+
+	.remove-btn:hover {
+		background: rgba(233, 25, 22, 0.4);
+	}
+
+	/* Transform Panel */
+	.transform-controls {
+		display: flex;
+		flex-direction: column;
+		gap: 15px;
+	}
+
+	.transform-controls label {
+		display: flex;
+		flex-direction: column;
+		gap: 5px;
+		color: #fff;
+		font-size: 14px;
+	}
+
+	.transform-controls input {
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid #333;
+		color: #fff;
+		padding: 8px;
+		border-radius: 4px;
+	}
+
+	.apply-btn {
+		width: 100%;
+		padding: 12px;
+		background: rgba(145, 71, 255, 0.3);
+		border: 1px solid #9147ff;
+		color: #fff;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 14px;
+		margin-top: 10px;
+	}
+
+	.apply-btn:hover {
+		background: rgba(145, 71, 255, 0.5);
+	}
+
+	/* Screenshot Panel */
+	.screenshot-btn {
+		width: 100%;
+		padding: 15px;
+		background: rgba(0, 245, 147, 0.2);
+		border: 1px solid rgba(0, 245, 147, 0.4);
+		color: #00f593;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 16px;
+		margin-bottom: 10px;
+	}
+
+	.screenshot-btn:hover {
+		background: rgba(0, 245, 147, 0.3);
+	}
+
+	.help-text {
+		color: #999;
+		font-size: 14px;
+		text-align: center;
+	}
+
+	/* Text Editor Panel */
+	.text-editor {
+		width: 100%;
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid #333;
+		color: #fff;
+		padding: 12px;
+		border-radius: 4px;
+		font-family: 'Consolas', 'Monaco', monospace;
+		font-size: 14px;
+		resize: vertical;
 	}
 </style>

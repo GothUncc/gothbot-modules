@@ -20,6 +20,9 @@ export async function GET({ locals }) {
     // Get replay buffer status
     const replayStatus = await context.obs.call('GetReplayBufferStatus');
     
+    // Get studio mode status
+    const studioMode = await context.obs.call('GetStudioModeEnabled');
+    
     // Get stats
     const stats = await context.obs.call('GetStats');
 
@@ -28,6 +31,7 @@ export async function GET({ locals }) {
       recording: recordStatus.outputActive || false,
       virtualCam: virtualCamStatus.outputActive || false,
       replayBuffer: replayStatus.outputActive || false,
+      studioMode: studioMode.studioModeEnabled || false,
       stats: {
         cpu: stats.cpuUsage || 0,
         fps: stats.activeFps || 0,
@@ -102,6 +106,25 @@ export async function POST({ request, locals }) {
 
     if (action === 'saveReplay') {
       await context.obs.call('SaveReplayBuffer');
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (action === 'toggleStudioMode') {
+      const currentStatus = await context.obs.call('GetStudioModeEnabled');
+      await context.obs.call('SetStudioModeEnabled', { 
+        studioModeEnabled: !currentStatus.studioModeEnabled 
+      });
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (action === 'triggerStudioTransition') {
+      await context.obs.call('TriggerStudioModeTransition');
       return new Response(JSON.stringify({ success: true }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }

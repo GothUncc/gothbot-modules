@@ -58,84 +58,102 @@
 	}
 </script>
 
-<div class="obs-control-dashboard">
-	<header class="dashboard-header">
-		<div class="header-content">
-			<h1 class="dashboard-title">🎛️ OBS Master Control Panel</h1>
-			<div class="version-badge">v2.3.0</div>
+<div class="obs-master-control">
+	<!-- Left Sidebar Navigation -->
+	<aside class="sidebar">
+		<div class="sidebar-header">
+			<h1 class="sidebar-title">OBS Master Control Panel</h1>
+			<div class="version">v2.3.0</div>
 		</div>
-		<ConnectionStatus {uptime} />
-	</header>
 
-	<main class="dashboard-main">
-		<Tabs {tabs} bind:activeTab />
+		<nav class="sidebar-nav">
+			{#each tabs as tab}
+				<button
+					class="nav-item"
+					class:active={activeTab === tab.id}
+					on:click={() => (activeTab = tab.id)}
+				>
+					<span class="nav-icon">{tab.icon}</span>
+					<span class="nav-label">{tab.label}</span>
+				</button>
+			{/each}
+		</nav>
+	</aside>
 
-		<section class="tab-content">
+	<!-- Main Content Area -->
+	<div class="main-container">
+		<!-- Top Header Bar -->
+		<header class="topbar">
+			<div class="topbar-left">
+				<h2 class="page-title">{tabs.find((t) => t.id === activeTab)?.label || 'Dashboard'}</h2>
+			</div>
+			<div class="topbar-right">
+				<div class="status-indicator" class:connected={$connectionStatus === 'connected'}>
+					<span class="status-dot"></span>
+					<span class="status-text"
+						>{$connectionStatus === 'connected' ? 'Connected' : 'Offline'}</span
+					>
+				</div>
+				<div class="uptime">
+					<span class="uptime-label">Uptime:</span>
+					<span class="uptime-value">{connectionUptime}</span>
+				</div>
+			</div>
+		</header>
+
+		<!-- Content Area -->
+		<main class="content">
 			{#if activeTab === 'status'}
-				<div class="status-overview">
-					<div class="status-card">
-						<h2>Dashboard Overview</h2>
-						<div class="status-grid">
-							<div class="stat-item">
-								<span class="stat-label">Controllers</span>
-								<span class="stat-value">14</span>
+				<div class="dashboard-grid">
+					<!-- Stats Cards -->
+					<div class="stats-row">
+						<div class="stat-card">
+							<div class="stat-label">Controllers</div>
+							<div class="stat-value">14</div>
+						</div>
+						<div class="stat-card">
+							<div class="stat-label">Methods</div>
+							<div class="stat-value">174+</div>
+						</div>
+						<div class="stat-card">
+							<div class="stat-label">Status</div>
+							<div class="stat-value" class:connected={$connectionStatus === 'connected'}>
+								{$connectionStatus === 'connected' ? 'Online' : 'Offline'}
 							</div>
-							<div class="stat-item">
-								<span class="stat-label">Methods</span>
-								<span class="stat-value">174+</span>
-							</div>
-							<div class="stat-item">
-								<span class="stat-label">Status</span>
-								<span class="stat-value connected"
-									>{$connectionStatus === 'connected' ? '🟢 Connected' : '🔴 Offline'}</span
-								>
-							</div>
-							<div class="stat-item">
-								<span class="stat-label">Uptime</span>
-								<span class="stat-value">{connectionUptime}</span>
-							</div>
+						</div>
+						<div class="stat-card">
+							<div class="stat-label">Uptime</div>
+							<div class="stat-value">{connectionUptime}</div>
 						</div>
 					</div>
 
-					<div class="features-grid">
-						<div class="feature-card">
-							<h3>🎯 Quick Actions</h3>
-							<p>Navigate to tabs above to:</p>
-							<ul>
-								<li>Switch profiles & collections</li>
-								<li>Adjust video settings</li>
-								<li>Manage replay buffer</li>
-								<li>Control virtual camera</li>
-								<li>Build automation rules</li>
-								<li>Test alerts</li>
-							</ul>
+					<!-- Info Cards -->
+					<div class="info-cards">
+						<div class="info-card">
+							<h3>Controllers Available</h3>
+							<div class="controller-grid">
+								<div class="controller-item">✓ Audio Mixer</div>
+								<div class="controller-item">✓ Stream Control</div>
+								<div class="controller-item">✓ Recording Control</div>
+								<div class="controller-item">✓ Scene Items</div>
+								<div class="controller-item">✓ Filters</div>
+								<div class="controller-item">✓ Transitions</div>
+								<div class="controller-item">✓ Profiles</div>
+								<div class="controller-item">✓ Collections</div>
+								<div class="controller-item">✓ Video Settings</div>
+								<div class="controller-item">✓ Replay Buffer</div>
+								<div class="controller-item">✓ Virtual Camera</div>
+								<div class="controller-item">✓ Automation</div>
+							</div>
 						</div>
 
-						<div class="feature-card">
-							<h3>📊 Controllers Available</h3>
-							<ul class="controller-list">
-								<li>✓ Audio Mixer</li>
-								<li>✓ Stream Control</li>
-								<li>✓ Recording Control</li>
-								<li>✓ Scene Items</li>
-								<li>✓ Filters</li>
-								<li>✓ Transitions</li>
-								<li>✓ Profiles</li>
-								<li>✓ Collections</li>
-								<li>✓ Video Settings</li>
-								<li>✓ Replay Buffer</li>
-								<li>✓ Virtual Camera</li>
-								<li>✓ Automation</li>
-							</ul>
-						</div>
-
-						<div class="feature-card">
-							<h3>🚀 Getting Started</h3>
-							<ol>
-								<li>Check connection status above</li>
-								<li>Navigate to Profiles tab</li>
+						<div class="info-card">
+							<h3>Getting Started</h3>
+							<ol class="steps-list">
+								<li>Check connection status in the top bar</li>
+								<li>Navigate using the left sidebar</li>
 								<li>Switch to your streaming profile</li>
-								<li>Adjust video settings if needed</li>
+								<li>Adjust video settings as needed</li>
 								<li>Start streaming!</li>
 							</ol>
 						</div>
@@ -156,206 +174,310 @@
 			{:else if activeTab === 'alerts'}
 				<AlertTester />
 			{/if}
-		</section>
-	</main>
+		</main>
+	</div>
 </div>
 
 <style>
 	:global(body) {
-		--color-primary: #1f2937;
-		--color-secondary: #374151;
-		--color-accent: #3b82f6;
-		--color-success: #10b981;
-		--color-warning: #f59e0b;
-		--color-error: #ef4444;
-		--color-text: #f3f4f6;
-		--color-text-muted: #9ca3af;
-
-		background-color: var(--color-primary);
-		color: var(--color-text);
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-			sans-serif;
 		margin: 0;
 		padding: 0;
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+			sans-serif;
+		background: #0e0e10;
+		color: #efeff1;
 	}
 
-	.obs-control-dashboard {
+	/* Main Layout */
+	.obs-master-control {
 		display: flex;
-		flex-direction: column;
 		height: 100vh;
-		background-color: var(--color-primary);
+		width: 100vw;
+		background: #0e0e10;
 		overflow: hidden;
 	}
 
-	.dashboard-header {
-		background-color: var(--color-secondary);
-		border-bottom: 2px solid var(--color-accent);
-		padding: 1rem 2rem;
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		gap: 2rem;
-	}
-
-	.header-content {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-	}
-
-	.dashboard-title {
-		margin: 0;
-		font-size: 1.75rem;
-		font-weight: 700;
-		letter-spacing: -0.5px;
-	}
-
-	.version-badge {
-		background-color: var(--color-accent);
-		color: white;
-		padding: 0.25rem 0.75rem;
-		border-radius: 0.25rem;
-		font-size: 0.75rem;
-		font-weight: 600;
-		text-transform: uppercase;
-	}
-
-	.dashboard-main {
+	/* Left Sidebar */
+	.sidebar {
+		width: 240px;
+		background: #18181b;
+		border-right: 1px solid #26262c;
 		display: flex;
 		flex-direction: column;
-		flex: 1;
-		overflow: hidden;
+		flex-shrink: 0;
 	}
 
-	.tab-content {
+	.sidebar-header {
+		padding: 1.5rem 1rem;
+		border-bottom: 1px solid #26262c;
+	}
+
+	.sidebar-title {
+		margin: 0;
+		font-size: 1rem;
+		font-weight: 600;
+		color: #efeff1;
+		line-height: 1.4;
+	}
+
+	.version {
+		margin-top: 0.25rem;
+		font-size: 0.75rem;
+		color: #adadb8;
+	}
+
+	.sidebar-nav {
 		flex: 1;
 		overflow-y: auto;
-		padding: 2rem;
+		padding: 0.5rem 0;
 	}
 
-	.status-overview {
+	.nav-item {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		width: 100%;
+		padding: 0.75rem 1rem;
+		background: transparent;
+		border: none;
+		border-left: 3px solid transparent;
+		color: #adadb8;
+		font-size: 0.875rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.15s ease;
+		text-align: left;
+	}
+
+	.nav-item:hover {
+		background: #1f1f23;
+		color: #efeff1;
+	}
+
+	.nav-item.active {
+		background: #1f1f23;
+		border-left-color: #9147ff;
+		color: #efeff1;
+	}
+
+	.nav-icon {
+		font-size: 1.125rem;
+		line-height: 1;
+	}
+
+	.nav-label {
+		flex: 1;
+	}
+
+	/* Main Container */
+	.main-container {
+		flex: 1;
 		display: flex;
 		flex-direction: column;
-		gap: 2rem;
+		overflow: hidden;
+		background: #0e0e10;
 	}
 
-	.status-card {
-		background-color: var(--color-secondary);
-		border: 1px solid rgba(59, 130, 246, 0.2);
-		border-radius: 0.5rem;
-		padding: 1.5rem;
+	/* Top Bar */
+	.topbar {
+		height: 50px;
+		background: #18181b;
+		border-bottom: 1px solid #26262c;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0 1.5rem;
+		flex-shrink: 0;
 	}
 
-	.status-card h2 {
-		margin-top: 0;
-		margin-bottom: 1rem;
-		font-size: 1.25rem;
-		color: var(--color-accent);
-	}
-
-	.status-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	.topbar-left {
+		display: flex;
+		align-items: center;
 		gap: 1rem;
 	}
 
-	.stat-item {
+	.page-title {
+		margin: 0;
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: #efeff1;
+	}
+
+	.topbar-right {
 		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		padding: 1rem;
-		background-color: rgba(59, 130, 246, 0.1);
-		border-radius: 0.375rem;
-		border-left: 3px solid var(--color-accent);
-	}
-
-	.stat-label {
-		font-size: 0.875rem;
-		color: var(--color-text-muted);
-		font-weight: 500;
-	}
-
-	.stat-value {
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: var(--color-text);
-	}
-
-	.stat-value.connected {
-		color: var(--color-success);
-	}
-
-	.features-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+		align-items: center;
 		gap: 1.5rem;
 	}
 
-	.feature-card {
-		background-color: var(--color-secondary);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		border-radius: 0.5rem;
+	.status-indicator {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.375rem 0.75rem;
+		background: #1f1f23;
+		border-radius: 0.25rem;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		color: #adadb8;
+	}
+
+	.status-indicator.connected {
+		color: #00f593;
+	}
+
+	.status-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: #e91916;
+	}
+
+	.status-indicator.connected .status-dot {
+		background: #00f593;
+	}
+
+	.uptime {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.8125rem;
+		color: #adadb8;
+	}
+
+	.uptime-label {
+		font-weight: 500;
+	}
+
+	.uptime-value {
+		font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+		color: #efeff1;
+	}
+
+	/* Content Area */
+	.content {
+		flex: 1;
+		overflow-y: auto;
+		padding: 1.5rem;
+		background: #0e0e10;
+	}
+
+	/* Dashboard Grid */
+	.dashboard-grid {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+
+	.stats-row {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		gap: 1rem;
+	}
+
+	.stat-card {
+		background: #18181b;
+		border: 1px solid #26262c;
+		border-radius: 0.375rem;
+		padding: 1.25rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.stat-label {
+		font-size: 0.8125rem;
+		color: #adadb8;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+
+	.stat-value {
+		font-size: 1.75rem;
+		font-weight: 700;
+		color: #efeff1;
+	}
+
+	.stat-value.connected {
+		color: #00f593;
+	}
+
+	.info-cards {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+		gap: 1.5rem;
+	}
+
+	.info-card {
+		background: #18181b;
+		border: 1px solid #26262c;
+		border-radius: 0.375rem;
 		padding: 1.5rem;
 	}
 
-	.feature-card h3 {
-		margin-top: 0;
-		margin-bottom: 1rem;
+	.info-card h3 {
+		margin: 0 0 1rem 0;
 		font-size: 1rem;
-		color: var(--color-accent);
+		font-weight: 600;
+		color: #efeff1;
 	}
 
-	.feature-card p {
-		margin: 0 0 0.75rem 0;
-		color: var(--color-text-muted);
-		font-size: 0.875rem;
-	}
-
-	.feature-card ul,
-	.feature-card ol {
-		margin: 0;
-		padding-left: 1.5rem;
-		color: var(--color-text-muted);
-		font-size: 0.875rem;
-	}
-
-	.feature-card li {
-		margin-bottom: 0.5rem;
-		line-height: 1.5;
-	}
-
-	.controller-list {
+	.controller-grid {
 		display: grid;
 		grid-template-columns: repeat(2, 1fr);
 		gap: 0.5rem;
-		padding: 0;
-		list-style: none;
 	}
 
-	.controller-list li {
-		padding: 0.5rem 0;
-		color: var(--color-text);
+	.controller-item {
+		font-size: 0.875rem;
+		color: #adadb8;
+		padding: 0.375rem 0;
 	}
 
+	.steps-list {
+		margin: 0;
+		padding-left: 1.25rem;
+		color: #adadb8;
+		font-size: 0.875rem;
+		line-height: 1.6;
+	}
+
+	.steps-list li {
+		margin-bottom: 0.5rem;
+	}
+
+	/* Responsive */
 	@media (max-width: 768px) {
-		.dashboard-header {
-			flex-direction: column;
-			gap: 1rem;
+		.sidebar {
+			width: 60px;
 		}
 
-		.header-content {
-			width: 100%;
+		.nav-label {
+			display: none;
 		}
 
-		.dashboard-title {
-			font-size: 1.25rem;
+		.sidebar-title,
+		.version {
+			display: none;
 		}
 
-		.tab-content {
-			padding: 1rem;
+		.topbar {
+			padding: 0 1rem;
 		}
 
-		.features-grid {
+		.page-title {
+			font-size: 1rem;
+		}
+
+		.uptime-label {
+			display: none;
+		}
+
+		.stats-row {
+			grid-template-columns: repeat(2, 1fr);
+		}
+
+		.info-cards {
 			grid-template-columns: 1fr;
 		}
 	}

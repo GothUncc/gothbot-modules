@@ -1,6 +1,7 @@
 {
   "name": "@gothbot/obs-control",
   "version": "2.4.0",
+  "type": "module",
   "description": "Complete OBS Studio remote control panel with web-based UI - audio mixing, streaming, recording, scene item transforms, filters, transitions, studio mode. Like having OBS Studio's UI in your browser.",
   "main": "index.js",
   "author": "GothBot Team",

@@ -17,6 +17,12 @@ const config = {
 			strict: false
 		}),
 
+		// Use relative paths for assets so it works regardless of base URL
+		paths: {
+			base: '',
+			relative: true
+		},
+
 		// Routes directory
 		files: {
 			routes: 'routes'

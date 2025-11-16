@@ -1,10 +1,11 @@
 {
-  "version": "1.0.11",
-  "lastUpdated": "2025-11-16T14:00:00Z",
+  "version": "1.0.12",
+  "lastUpdated": "2025-11-16T16:30:00Z",
   "description": "Official GothBot Module Marketplace",
   "modules": [
     {
       "id": "obs-master-control",
+      "moduleId": "obs-master-control",
       "name": "OBS Master Control Panel",
       "version": "2.4.0",
       "description": "Complete OBS Studio remote control panel with web-based UI - audio mixing, streaming, recording, scene item transforms, filters, transitions, studio mode, and web dashboard. Like having OBS Studio's UI in your browser with real-time live updates.",
@@ -12,16 +13,19 @@
       "category": "infrastructure",
       "tags": ["obs", "control", "streaming", "recording", "audio", "mixer", "studio", "remote", "scenes", "transforms", "filters", "transitions"],
       "icon": "🎛️",
-      "hasUI": true,
-      "uiPath": "/",
-      "ui": {
-        "title": "OBS Master Control",
-        "description": "Complete OBS Studio remote control panel with dashboard",
-        "entrypoint": "/",
-        "icon": "🎛️"
-      },
       "downloadUrl": "https://raw.githubusercontent.com/GothUncc/gothbot-modules/main/modules/obs-control/index.js",
-      "installType": "bundled",
+      "installType": "github",
+      "metadata": {
+        "hasUI": true,
+        "ui": {
+          "title": "OBS Master Control",
+          "description": "Complete OBS Studio remote control panel with dashboard",
+          "entrypoint": "/",
+          "directory": "build",
+          "icon": "🎛️",
+          "files": ["build/**/*"]
+        }
+      },
       "screenshots": [],
       "features": [
         "Web-based dashboard UI (Phase 5 - NEW)",
@@ -64,9 +68,9 @@
         "Web-based control panel UI"
       ],
       "requirements": {
-        "botVersion": ">=2.0.175",
+        "botVersion": ">=2.0.210",
         "moduleFramework": ">=1.0.0",
-        "external": ["OBS Studio 28+ with WebSocket enabled"]
+        "obs": ">=28.0.0"
       },
       "documentation": "https://github.com/GothUncc/gothomationbotV2/blob/main/modules/obs-control/README.md",
       "migration": "https://github.com/GothUncc/gothomationbotV2/blob/main/modules/obs-control/MIGRATION.md",

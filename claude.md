@@ -22,6 +22,15 @@ AI FORMATTING RULES (CRITICAL):
 7. When adding new info, find appropriate section or create new compact section
 8. This document is for AI context retrieval - optimize for tokens, not human readability
 
+AI IMPLEMENTATION RULES (CRITICAL):
+1. NEVER implement placeholder/stub code without explicit user permission
+2. NEVER create mock/fake functionality that appears to work but doesn't
+3. NEVER build UI components without implementing actual backend functionality
+4. ALWAYS verify dependencies are available before implementing features
+5. ALWAYS disclose to user if functionality requires external services/APIs
+6. If backend service unavailable, inform user IMMEDIATELY - do not proceed with stubs
+7. Implementation must be complete and functional OR clearly documented as incomplete
+
 AI COLLABORATION PROTOCOL:
 - Cross-workspace coordination: C:\Users\malik\OneDrive\Documents\AICollaboration\
 - ModAI (this workspace) ↔ CoreAI (GothomationBot2.0 workspace)

@@ -1,1 +1,1 @@
-export const env={}
+export const env={"PUBLIC_BASE_PATH":"/module-ui/obs-master-control"}

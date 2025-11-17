@@ -1781,12 +1781,61 @@ function registerAPIRoutes(context, obsServices, automationEngine) {
   // Controls endpoints
   context.web.registerRoute('GET', '/api/obs/controls', async function(req, res) {
     try {
-      const streamStatus = await obsServices.obsCore.call('GetStreamStatus');
-      const recordStatus = await obsServices.obsCore.call('GetRecordStatus');
-      const virtualCamStatus = await obsServices.obsCore.call('GetVirtualCamStatus');
-      const replayStatus = await obsServices.obsCore.call('GetReplayBufferStatus');
-      const studioMode = await obsServices.obsCore.call('GetStudioModeEnabled');
-      const stats = await obsServices.obsCore.call('GetStats');
+      if (!obsServices || !obsServices.obsCore) {
+        return res.status(503).json({ error: 'OBS services not initialized' });
+      }
+      
+      // Default values in case calls fail
+      let streamStatus = { outputActive: false, outputBytes: 0, outputDuration: 1 };
+      let recordStatus = { outputActive: false };
+      let virtualCamStatus = { outputActive: false };
+      let replayStatus = { outputActive: false };
+      let studioMode = { studioModeEnabled: false };
+      let stats = {
+        cpuUsage: 0,
+        activeFps: 0,
+        outputSkippedFrames: 0,
+        averageFrameRenderTime: 0,
+        renderTimePerFrame: 0
+      };
+      
+      // Make calls with individual error handling
+      try {
+        streamStatus = await obsServices.obsCore.call('GetStreamStatus');
+      } catch (e) {
+        context.logger.error('GetStreamStatus failed:', e.message);
+      }
+      
+      try {
+        recordStatus = await obsServices.obsCore.call('GetRecordStatus');
+      } catch (e) {
+        context.logger.error('GetRecordStatus failed:', e.message);
+      }
+      
+      try {
+        virtualCamStatus = await obsServices.obsCore.call('GetVirtualCamStatus');
+      } catch (e) {
+        context.logger.error('GetVirtualCamStatus failed:', e.message);
+      }
+      
+      try {
+        replayStatus = await obsServices.obsCore.call('GetReplayBufferStatus');
+      } catch (e) {
+        context.logger.error('GetReplayBufferStatus failed:', e.message);
+      }
+      
+      try {
+        studioMode = await obsServices.obsCore.call('GetStudioModeEnabled');
+      } catch (e) {
+        context.logger.error('GetStudioModeEnabled failed:', e.message);
+      }
+      
+      try {
+        stats = await obsServices.obsCore.call('GetStats');
+      } catch (e) {
+        context.logger.error('GetStats failed:', e.message);
+      }
+      
       res.json({
         streaming: streamStatus.outputActive || false,
         recording: recordStatus.outputActive || false,

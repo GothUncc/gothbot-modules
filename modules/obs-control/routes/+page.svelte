@@ -3,9 +3,9 @@
 	import { connectionStatus } from './stores/obsStatus.js';
 	import { initializeWebSocket } from './lib/websocket.js';
 
-	// Core v2.0.209+: Module APIs moved from /modules/ to /module-ui/
-	// Complete URL separation: admin config at /modules/, dashboard at /module-ui/
-	const API_PREFIX = '/module-ui/obs-master-control';
+	// Core v2.0.214: Final routing decision - all module routes under /modules/
+	// SPA fallback properly handles both SvelteKit admin pages and module dashboards
+	const API_PREFIX = '/modules/obs-master-control';
 
 	// OBS State - NOW REAL DATA
 	let scenes = [];

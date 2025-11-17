@@ -1,6 +1,6 @@
 {
   "name": "@gothbot/obs-control",
-  "version": "0.9.13",
+  "version": "0.9.14",
   "type": "module",
   "description": "Complete OBS Studio remote control panel with web-based UI - audio mixing, streaming, recording, scene item transforms, filters, transitions, studio mode. Like having OBS Studio's UI in your browser.",
   "main": "index.js",
@@ -37,7 +37,7 @@
   },
   "scripts": {
     "dev": "vite dev",
-    "build": "cross-env PUBLIC_BASE_PATH=/module-ui/obs-master-control vite build",
+    "build": "cross-env PUBLIC_BASE_PATH=/modules/obs-master-control vite build",
     "preview": "vite preview"
   },
   "dependencies": {

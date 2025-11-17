@@ -86,6 +86,7 @@
 	function handleSceneChanged(event) {
 		currentScene = event.detail.sceneName;
 		loadSources(); // Reload sources for new scene
+		loadAudioSources(); // Reload audio mixer
 	}
 
 	function handleScenesChanged(event) {
@@ -165,6 +166,7 @@
 				...s,
 				peak: s.muted ? 0 : s.volume
 			}));
+			console.log('Loaded audio sources:', audioSources);
 		} catch (error) {
 			console.error('Failed to load audio sources:', error);
 		}
@@ -746,11 +748,11 @@
 					<div class="list-item source-item">
 						<button 
 							class="source-icon-btn" 
-							class:hidden={!source.visible}
 							on:click={() => toggleSourceVisibility(i)}
 							title={source.visible ? 'Hide' : 'Show'}
+							style="opacity: {source.visible ? '1' : '0.3'};"
 						>
-							{source.visible ? '👁️' : '🚫'}
+							{source.visible ? '👁️' : '👁️‍🗨️'}
 						</button>
 						<button 
 							class="source-icon-btn"
@@ -1209,10 +1211,6 @@
 
 	.source-icon-btn:hover {
 		opacity: 1;
-	}
-
-	.source-icon-btn.hidden {
-		opacity: 0.3;
 	}
 
 	.source-icon-btn.locked {

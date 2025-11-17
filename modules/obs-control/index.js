@@ -2089,7 +2089,7 @@ function registerWebSocketHandler(context, obsServices, automationEngine) {
 
 module.exports = {
   name: 'obs-control',
-  version: '0.9.8',
+  version: '0.9.9',
 
   /**
    * Configuration schema
@@ -2354,9 +2354,9 @@ module.exports = {
         try {
           context.logger.info('Registering OBS Control web UI');
 
-          // Serve static UI files from build directory with module context
-          // Pass obsServices so SvelteKit can access it in hooks.server.js
-          context.web.serveStatic('/', './build', {
+          // Serve static UI files from build directory at /ui/ to avoid conflicting with /api/ routes
+          // This prevents the static file middleware from intercepting API calls
+          context.web.serveStatic('/ui', './build', {
             moduleContext: {
               obs: obsServices,
               context: context
@@ -2371,7 +2371,7 @@ module.exports = {
             registerWebSocketHandler(context, obsServices, automationEngine);
           }
 
-          context.logger.info(`OBS Control UI available at ${context.web.getBaseUrl()}`);
+          context.logger.info(`OBS Control UI available at ${context.web.getBaseUrl()}/ui`);
         } catch (uiError) {
           context.logger.error('Failed to register web UI', { error: uiError.message });
           // Don't throw - UI is optional, backend should still work

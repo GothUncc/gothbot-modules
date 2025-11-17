@@ -1769,7 +1769,7 @@ function registerWebSocketHandler(context, obsServices, automationEngine) {
 
 module.exports = {
   name: 'obs-control',
-  version: '0.9.5',
+  version: '0.9.6',
 
   /**
    * Configuration schema
@@ -2002,12 +2002,6 @@ module.exports = {
       alertEngine = new DynamicAlertEngine(obsServices, context);
       automationEngine = new AutomationEngine(obsServices, context);
 
-      // CRITICAL: Share context with SvelteKit server for API routes
-      // Import the shared context setter
-      const sharedContext = require('./src/shared-context.js');
-      sharedContext.setModuleContext(context, obsServices, alertEngine, automationEngine);
-      context.logger.info('Module context shared with SvelteKit server');
-
       // Connection event handlers
       obsServices.on('connected', function() {
         isConnected = true;
@@ -2040,8 +2034,14 @@ module.exports = {
         try {
           context.logger.info('Registering OBS Control web UI');
 
-          // Serve static UI files from build directory
-          context.web.serveStatic('/', './build');
+          // Serve static UI files from build directory with module context
+          // Pass obsServices so SvelteKit can access it in hooks.server.js
+          context.web.serveStatic('/', './build', {
+            moduleContext: {
+              obs: obsServices,
+              context: context
+            }
+          });
 
           // Register API endpoints
           registerAPIRoutes(context, obsServices, automationEngine);

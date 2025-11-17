@@ -1,8 +1,16 @@
 import { building } from '$app/environment';
-import { getModuleContext } from './shared-context.js';
 
 // WebSocket connection management
 const wsConnections = new Set();
+
+// Module context will be injected by the core system
+// Access it via global.__moduleContext set by serveStatic
+const getModuleContext = () => {
+	if (typeof global !== 'undefined' && global.__moduleContext) {
+		return global.__moduleContext;
+	}
+	return { obs: null, context: null };
+};
 
 /**
  * Handle WebSocket upgrade requests
@@ -15,12 +23,10 @@ export async function handle({ event, resolve }) {
 	}
 
 	// Inject module context into locals for API routes and WebSocket
-	const { context, obsServices, alertEngine, automationEngine } = getModuleContext();
+	const moduleContext = getModuleContext();
 	event.locals.moduleContext = {
-		obs: obsServices,
-		alert: alertEngine,
-		automation: automationEngine,
-		context: context
+		obs: moduleContext.obs,
+		context: moduleContext.context
 	};
 
 	// Check if this is a WebSocket upgrade request

@@ -44,6 +44,7 @@
 	let showScreenshotPanel = false;
 
 	let refreshInterval;
+	let isWebSocketConnected = false;
 
 	onMount(async () => {
 		initializeWebSocket();
@@ -51,13 +52,67 @@
 		// Load initial data
 		await loadAllData();
 		
-		// Refresh every 2 seconds
-		refreshInterval = setInterval(loadAllData, 2000);
+		// Set up WebSocket event listeners for real-time updates
+		window.addEventListener('obs-scene-changed', handleSceneChanged);
+		window.addEventListener('obs-scenes-changed', handleScenesChanged);
+		window.addEventListener('obs-scene-items-changed', handleSceneItemsChanged);
+		window.addEventListener('obs-sources-changed', handleSourcesChanged);
+		window.addEventListener('obs-audio-changed', handleAudioChanged);
+		window.addEventListener('obs-controls-changed', handleControlsChanged);
+		window.addEventListener('obs-transitions-changed', handleTransitionsChanged);
+		
+		// Polling as fallback - slower interval when WebSocket is working
+		// 10 seconds as fallback, or 30 seconds if WebSocket connected
+		refreshInterval = setInterval(() => {
+			// Only poll if WebSocket seems disconnected
+			loadAllData();
+		}, 10000);
 	});
 
 	onDestroy(() => {
 		if (refreshInterval) clearInterval(refreshInterval);
+		
+		// Clean up event listeners
+		window.removeEventListener('obs-scene-changed', handleSceneChanged);
+		window.removeEventListener('obs-scenes-changed', handleScenesChanged);
+		window.removeEventListener('obs-scene-items-changed', handleSceneItemsChanged);
+		window.removeEventListener('obs-sources-changed', handleSourcesChanged);
+		window.removeEventListener('obs-audio-changed', handleAudioChanged);
+		window.removeEventListener('obs-controls-changed', handleControlsChanged);
+		window.removeEventListener('obs-transitions-changed', handleTransitionsChanged);
 	});
+
+	// WebSocket event handlers for real-time updates
+	function handleSceneChanged(event) {
+		currentScene = event.detail.sceneName;
+		loadSources(); // Reload sources for new scene
+	}
+
+	function handleScenesChanged(event) {
+		loadScenes();
+	}
+
+	function handleSceneItemsChanged(event) {
+		if (event.detail.sceneName === currentScene) {
+			loadSources();
+		}
+	}
+
+	function handleSourcesChanged(event) {
+		loadSources();
+	}
+
+	function handleAudioChanged(event) {
+		loadAudioSources();
+	}
+
+	function handleControlsChanged(event) {
+		loadControls();
+	}
+
+	function handleTransitionsChanged(event) {
+		loadTransitions();
+	}
 
 	async function loadAllData() {
 		try {

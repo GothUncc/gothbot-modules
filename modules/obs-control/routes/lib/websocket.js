@@ -60,18 +60,101 @@ function handleWebSocketMessage(event) {
 				handleServerStatus(message);
 				break;
 
-			case 'CurrentSceneChanged':
-				updateCurrentScene(message.scene);
+			// Scene events
+			case 'CurrentProgramSceneChanged':
+				if (message.data && message.data.sceneName) {
+					updateCurrentScene(message.data.sceneName);
+					// Trigger scene reload for scene items
+					window.dispatchEvent(new CustomEvent('obs-scene-changed', { detail: message.data }));
+				}
 				break;
 
+			case 'SceneCreated':
+			case 'SceneRemoved':
+			case 'SceneNameChanged':
+				// Trigger full scene list reload
+				window.dispatchEvent(new CustomEvent('obs-scenes-changed', { detail: message.data }));
+				break;
+
+			// Scene item events
+			case 'SceneItemCreated':
+			case 'SceneItemRemoved':
+			case 'SceneItemEnableStateChanged':
+			case 'SceneItemTransformChanged':
+				// Trigger scene items reload for affected scene
+				window.dispatchEvent(new CustomEvent('obs-scene-items-changed', { detail: message.data }));
+				break;
+
+			// Input/Source events
+			case 'InputCreated':
+			case 'InputRemoved':
+			case 'InputNameChanged':
+				// Trigger full sources reload
+				window.dispatchEvent(new CustomEvent('obs-sources-changed', { detail: message.data }));
+				break;
+
+			case 'InputVolumeChanged':
+			case 'InputMuteStateChanged':
+			case 'InputAudioSyncOffsetChanged':
+			case 'InputAudioTracksChanged':
+			case 'InputAudioMonitorTypeChanged':
+				// Trigger audio sources reload
+				window.dispatchEvent(new CustomEvent('obs-audio-changed', { detail: message.data }));
+				break;
+
+			// Stream/Record events
 			case 'StreamStateChanged':
-				updateStreamStatus({
-					streaming: message.streaming,
-					recording: message.recording,
-					recordingPaused: message.recordingPaused,
-					replayBufferActive: message.replayBufferActive,
-					virtualCameraActive: message.virtualCameraActive
-				});
+				if (message.data) {
+					updateStreamStatus({
+						streaming: message.data.outputActive || false,
+						recording: false // Will be updated by RecordStateChanged
+					});
+					window.dispatchEvent(new CustomEvent('obs-controls-changed'));
+				}
+				break;
+
+			case 'RecordStateChanged':
+				if (message.data) {
+					window.dispatchEvent(new CustomEvent('obs-controls-changed'));
+				}
+				break;
+
+			case 'ReplayBufferStateChanged':
+				if (message.data) {
+					updateReplayBufferState(message.data.outputActive || false);
+					window.dispatchEvent(new CustomEvent('obs-controls-changed'));
+				}
+				break;
+
+			case 'VirtualcamStateChanged':
+				if (message.data) {
+					updateVirtualCameraState(message.data.outputActive || false);
+					window.dispatchEvent(new CustomEvent('obs-controls-changed'));
+				}
+				break;
+
+			// Transition events
+			case 'CurrentSceneTransitionChanged':
+			case 'CurrentSceneTransitionDurationChanged':
+				window.dispatchEvent(new CustomEvent('obs-transitions-changed', { detail: message.data }));
+				break;
+
+			// Profile/Collection events
+			case 'CurrentProfileChanged':
+				if (message.data && message.data.profileName) {
+					updateCurrentProfile(message.data.profileName);
+				}
+				break;
+
+			case 'CurrentSceneCollectionChanged':
+				if (message.data && message.data.sceneCollectionName) {
+					updateCurrentCollection(message.data.sceneCollectionName);
+				}
+				break;
+
+			// Legacy events (keep for compatibility)
+			case 'CurrentSceneChanged':
+				updateCurrentScene(message.scene);
 				break;
 
 			case 'ProfileChanged':
@@ -86,16 +169,12 @@ function handleWebSocketMessage(event) {
 				updateVideoSettings(message.settings);
 				break;
 
-			case 'ReplayBufferStateChanged':
-				updateReplayBufferState(message.state);
-				break;
-
-			case 'VirtualCameraStateChanged':
-				updateVirtualCameraState(message.state);
-				break;
-
 			case 'Error':
 				setError(message.errorMessage || 'An error occurred');
+				break;
+
+			case 'Success':
+				console.log('[OBS WebSocket] Success:', message.message);
 				break;
 
 			default:

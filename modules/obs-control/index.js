@@ -2045,8 +2045,130 @@ function registerAPIRoutes(context, obsServices, automationEngine) {
  * Register WebSocket handler for real-time updates
  */
 function registerWebSocketHandler(context, obsServices, automationEngine) {
+  // Track all connected clients
+  const clients = new Set();
+  
+  // OBS event handlers - broadcast to all connected clients
+  const obsEventHandlers = {
+    // Scene events
+    'CurrentProgramSceneChanged': (data) => {
+      broadcastToClients({ type: 'CurrentProgramSceneChanged', data });
+    },
+    'SceneCreated': (data) => {
+      broadcastToClients({ type: 'SceneCreated', data });
+    },
+    'SceneRemoved': (data) => {
+      broadcastToClients({ type: 'SceneRemoved', data });
+    },
+    'SceneNameChanged': (data) => {
+      broadcastToClients({ type: 'SceneNameChanged', data });
+    },
+    
+    // Scene item events
+    'SceneItemCreated': (data) => {
+      broadcastToClients({ type: 'SceneItemCreated', data });
+    },
+    'SceneItemRemoved': (data) => {
+      broadcastToClients({ type: 'SceneItemRemoved', data });
+    },
+    'SceneItemEnableStateChanged': (data) => {
+      broadcastToClients({ type: 'SceneItemEnableStateChanged', data });
+    },
+    'SceneItemTransformChanged': (data) => {
+      broadcastToClients({ type: 'SceneItemTransformChanged', data });
+    },
+    
+    // Input/Source events
+    'InputCreated': (data) => {
+      broadcastToClients({ type: 'InputCreated', data });
+    },
+    'InputRemoved': (data) => {
+      broadcastToClients({ type: 'InputRemoved', data });
+    },
+    'InputNameChanged': (data) => {
+      broadcastToClients({ type: 'InputNameChanged', data });
+    },
+    'InputVolumeChanged': (data) => {
+      broadcastToClients({ type: 'InputVolumeChanged', data });
+    },
+    'InputMuteStateChanged': (data) => {
+      broadcastToClients({ type: 'InputMuteStateChanged', data });
+    },
+    'InputAudioSyncOffsetChanged': (data) => {
+      broadcastToClients({ type: 'InputAudioSyncOffsetChanged', data });
+    },
+    'InputAudioTracksChanged': (data) => {
+      broadcastToClients({ type: 'InputAudioTracksChanged', data });
+    },
+    'InputAudioMonitorTypeChanged': (data) => {
+      broadcastToClients({ type: 'InputAudioMonitorTypeChanged', data });
+    },
+    
+    // Stream/record events
+    'StreamStateChanged': (data) => {
+      broadcastToClients({ type: 'StreamStateChanged', data });
+    },
+    'RecordStateChanged': (data) => {
+      broadcastToClients({ type: 'RecordStateChanged', data });
+    },
+    'ReplayBufferStateChanged': (data) => {
+      broadcastToClients({ type: 'ReplayBufferStateChanged', data });
+    },
+    'VirtualcamStateChanged': (data) => {
+      broadcastToClients({ type: 'VirtualcamStateChanged', data });
+    },
+    
+    // Transition events
+    'CurrentSceneTransitionChanged': (data) => {
+      broadcastToClients({ type: 'CurrentSceneTransitionChanged', data });
+    },
+    'CurrentSceneTransitionDurationChanged': (data) => {
+      broadcastToClients({ type: 'CurrentSceneTransitionDurationChanged', data });
+    },
+    
+    // Profile/collection events
+    'CurrentProfileChanged': (data) => {
+      broadcastToClients({ type: 'CurrentProfileChanged', data });
+    },
+    'CurrentSceneCollectionChanged': (data) => {
+      broadcastToClients({ type: 'CurrentSceneCollectionChanged', data });
+    }
+  };
+  
+  // Broadcast message to all connected clients
+  function broadcastToClients(message) {
+    const messageStr = JSON.stringify(message);
+    clients.forEach(client => {
+      if (client.readyState === 1) { // WebSocket.OPEN
+        try {
+          client.send(messageStr);
+        } catch (error) {
+          context.logger.error('Error broadcasting to client', { error: error.message });
+        }
+      }
+    });
+  }
+  
+  // Subscribe to OBS events if obsCore supports it
+  if (obsServices.obsCore && obsServices.obsCore.on) {
+    Object.keys(obsEventHandlers).forEach(eventName => {
+      obsServices.obsCore.on(eventName, obsEventHandlers[eventName]);
+    });
+    context.logger.info('Subscribed to OBS events for WebSocket broadcasting');
+  } else if (obsServices.obsCore && obsServices.obsCore.addListener) {
+    // Alternative event listener API
+    Object.keys(obsEventHandlers).forEach(eventName => {
+      obsServices.obsCore.addListener(eventName, obsEventHandlers[eventName]);
+    });
+    context.logger.info('Subscribed to OBS events for WebSocket broadcasting (via addListener)');
+  } else {
+    context.logger.warn('OBS Core does not support event subscription - real-time updates disabled');
+  }
+  
+  // Register WebSocket handler
   context.web.registerWebSocket(function(ws, req) {
-    context.logger.info('WebSocket connection established');
+    context.logger.info('WebSocket client connected');
+    clients.add(ws);
 
     // Send initial status
     obsServices.getStatus().then(function(status) {
@@ -2127,18 +2249,20 @@ function registerWebSocketHandler(context, obsServices, automationEngine) {
     });
 
     ws.on('close', function() {
-      context.logger.info('WebSocket connection closed');
+      context.logger.info('WebSocket client disconnected');
+      clients.delete(ws);
     });
 
     ws.on('error', function(error) {
       context.logger.error('WebSocket error', { error: error.message });
+      clients.delete(ws);
     });
   });
 }
 
 module.exports = {
   name: 'obs-control',
-  version: '0.9.16',
+  version: '1.0.0',
 
   /**
    * Configuration schema

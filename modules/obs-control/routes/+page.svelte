@@ -97,7 +97,7 @@
 	async function loadSources() {
 		if (!currentScene) return;
 		try {
-			const response = await fetch(`/api/obs/sources?scene=${encodeURIComponent(currentScene)}`);
+			const response = await fetch(`${API_PREFIX}/api/obs/sources?scene=${encodeURIComponent(currentScene)}`);
 			const data = await response.json();
 			sources = data.sources.map(s => ({
 				name: s.sourceName,
@@ -413,7 +413,7 @@
 
 	async function loadFilters(sourceName) {
 		try {
-			const response = await fetch(`/api/obs/filters?sourceName=${encodeURIComponent(sourceName)}`);
+			const response = await fetch(`${API_PREFIX}/api/obs/filters?sourceName=${encodeURIComponent(sourceName)}`);
 			const data = await response.json();
 			sourceFilters = data.filters || [];
 		} catch (error) {
@@ -499,7 +499,7 @@
 
 	async function loadTransform(source) {
 		try {
-			const response = await fetch(`/api/obs/transforms?sceneName=${encodeURIComponent(currentScene)}&sceneItemId=${source.sceneItemId}`);
+			const response = await fetch(`${API_PREFIX}/api/obs/transforms?sceneName=${encodeURIComponent(currentScene)}&sceneItemId=${source.sceneItemId}`);
 			const data = await response.json();
 			sourceTransform = data.transform || {};
 		} catch (error) {
@@ -570,7 +570,7 @@
 
 	async function loadInputSettings(inputName) {
 		try {
-			const response = await fetch(`/api/obs/inputs?inputName=${encodeURIComponent(inputName)}`);
+			const response = await fetch(`${API_PREFIX}/api/obs/inputs?inputName=${encodeURIComponent(inputName)}`);
 			const data = await response.json();
 			if (data.settings && data.settings.text) {
 				// Store text in selectedSource for editing

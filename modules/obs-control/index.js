@@ -2089,7 +2089,7 @@ function registerWebSocketHandler(context, obsServices, automationEngine) {
 
 module.exports = {
   name: 'obs-control',
-  version: '0.9.15',
+  version: '0.9.16',
 
   /**
    * Configuration schema

@@ -1,22 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir:*)",
-      "Bash(gh issue list:*)",
-      "Bash(gh issue view:*)",
-      "Bash(gh issue comment:*)",
-      "Bash(gh issue create:*)",
+      "Bash(ls:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(node:*)",
-      "Bash(docker ps:*)",
       "Bash(git push:*)",
-      "Bash(git pull:*)",
-      "Bash(git rebase:*)",
-      "Bash(findstr:*)",
-      "Bash(npm install:*)",
-      "Bash(npm run build:*)",
-      "Bash(git reset:*)"
+      "Bash(git commit:*)",
+      "Bash(curl -s https://gothbot.kusalab.org/modules/obs-master-control/)"
     ],
     "deny": [],
     "ask": []

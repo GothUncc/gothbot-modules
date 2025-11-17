@@ -1670,6 +1670,322 @@ function registerAPIRoutes(context, obsServices, automationEngine) {
       res.status(500).json({ error: error.message });
     }
   });
+
+  // Scenes endpoints
+  context.web.registerRoute('GET', '/api/obs/scenes', async function(req, res) {
+    try {
+      const sceneList = await obsServices.obsCore.call('GetSceneList');
+      const currentScene = await obsServices.obsCore.call('GetCurrentProgramScene');
+      res.json({
+        scenes: sceneList.scenes || [],
+        currentScene: currentScene.sceneName || ''
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  context.web.registerRoute('POST', '/api/obs/scenes', async function(req, res) {
+    try {
+      const { action, sceneName } = req.body;
+      if (action === 'setCurrentScene') {
+        await obsServices.obsCore.call('SetCurrentProgramScene', { sceneName });
+        res.json({ success: true });
+      } else if (action === 'createScene') {
+        await obsServices.obsCore.call('CreateScene', { sceneName });
+        res.json({ success: true });
+      } else if (action === 'removeScene') {
+        await obsServices.obsCore.call('RemoveScene', { sceneName });
+        res.json({ success: true });
+      } else {
+        res.status(400).json({ error: 'Invalid action' });
+      }
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Sources endpoints
+  context.web.registerRoute('GET', '/api/obs/sources', async function(req, res) {
+    try {
+      const sceneName = req.query.scene;
+      if (!sceneName) {
+        return res.status(400).json({ error: 'Scene name required' });
+      }
+      const itemList = await obsServices.obsCore.call('GetSceneItemList', { sceneName });
+      res.json({ sources: itemList.sceneItems || [] });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  context.web.registerRoute('POST', '/api/obs/sources', async function(req, res) {
+    try {
+      const { action, sceneName, sceneItemId, enabled, locked } = req.body;
+      if (action === 'setVisibility') {
+        await obsServices.obsCore.call('SetSceneItemEnabled', { sceneName, sceneItemId, sceneItemEnabled: enabled });
+        res.json({ success: true });
+      } else if (action === 'setLocked') {
+        await obsServices.obsCore.call('SetSceneItemLocked', { sceneName, sceneItemId, sceneItemLocked: locked });
+        res.json({ success: true });
+      } else {
+        res.status(400).json({ error: 'Invalid action' });
+      }
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Audio endpoints
+  context.web.registerRoute('GET', '/api/obs/audio', async function(req, res) {
+    try {
+      const inputList = await obsServices.obsCore.call('GetInputList');
+      const audioSources = [];
+      for (const input of inputList.inputs || []) {
+        const volumeData = await obsServices.obsCore.call('GetInputVolume', { inputName: input.inputName });
+        const muteData = await obsServices.obsCore.call('GetInputMute', { inputName: input.inputName });
+        audioSources.push({
+          name: input.inputName,
+          volume: Math.round(Math.pow(10, volumeData.inputVolumeDb / 20) * 100),
+          muted: muteData.inputMuted
+        });
+      }
+      res.json({ audioSources });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  context.web.registerRoute('POST', '/api/obs/audio', async function(req, res) {
+    try {
+      const { action, inputName, volume, muted } = req.body;
+      if (action === 'setVolume') {
+        const volumeDb = 20 * Math.log10(volume / 100);
+        await obsServices.obsCore.call('SetInputVolume', { inputName, inputVolumeDb: volumeDb });
+        res.json({ success: true });
+      } else if (action === 'toggleMute') {
+        await obsServices.obsCore.call('ToggleInputMute', { inputName });
+        res.json({ success: true });
+      } else {
+        res.status(400).json({ error: 'Invalid action' });
+      }
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Controls endpoints
+  context.web.registerRoute('GET', '/api/obs/controls', async function(req, res) {
+    try {
+      const streamStatus = await obsServices.obsCore.call('GetStreamStatus');
+      const recordStatus = await obsServices.obsCore.call('GetRecordStatus');
+      const virtualCamStatus = await obsServices.obsCore.call('GetVirtualCamStatus');
+      const replayStatus = await obsServices.obsCore.call('GetReplayBufferStatus');
+      const studioMode = await obsServices.obsCore.call('GetStudioModeEnabled');
+      const stats = await obsServices.obsCore.call('GetStats');
+      res.json({
+        streaming: streamStatus.outputActive || false,
+        recording: recordStatus.outputActive || false,
+        virtualCam: virtualCamStatus.outputActive || false,
+        replayBuffer: replayStatus.outputActive || false,
+        studioMode: studioMode.studioModeEnabled || false,
+        stats: {
+          cpu: stats.cpuUsage || 0,
+          fps: stats.activeFps || 0,
+          dropped: stats.outputSkippedFrames || 0,
+          kbps: streamStatus.outputBytes ? Math.round((streamStatus.outputBytes * 8) / streamStatus.outputDuration / 1000) : 0,
+          renderTime: `${(stats.averageFrameRenderTime || 0).toFixed(1)} ms`,
+          encodingTime: `${(stats.renderTimePerFrame || 0).toFixed(1)} ms`
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  context.web.registerRoute('POST', '/api/obs/controls', async function(req, res) {
+    try {
+      const { action } = req.body;
+      if (action === 'toggleStreaming') {
+        await obsServices.obsCore.call('ToggleStream');
+      } else if (action === 'toggleRecording') {
+        await obsServices.obsCore.call('ToggleRecord');
+      } else if (action === 'toggleVirtualCam') {
+        await obsServices.obsCore.call('ToggleVirtualCam');
+      } else if (action === 'toggleReplayBuffer') {
+        await obsServices.obsCore.call('ToggleReplayBuffer');
+      } else if (action === 'saveReplay') {
+        await obsServices.obsCore.call('SaveReplayBuffer');
+      } else if (action === 'toggleStudioMode') {
+        const current = await obsServices.obsCore.call('GetStudioModeEnabled');
+        await obsServices.obsCore.call('SetStudioModeEnabled', { studioModeEnabled: !current.studioModeEnabled });
+      } else if (action === 'triggerStudioTransition') {
+        await obsServices.obsCore.call('TriggerStudioModeTransition');
+      } else {
+        return res.status(400).json({ error: 'Invalid action' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Transitions endpoints
+  context.web.registerRoute('GET', '/api/obs/transitions', async function(req, res) {
+    try {
+      const transitionsList = await obsServices.obsCore.call('GetSceneTransitionList');
+      const currentTransition = await obsServices.obsCore.call('GetCurrentSceneTransition');
+      res.json({
+        transitions: transitionsList.transitions || [],
+        currentTransition: currentTransition.transitionName || '',
+        currentDuration: currentTransition.transitionDuration || 300
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  context.web.registerRoute('POST', '/api/obs/transitions', async function(req, res) {
+    try {
+      const { action, transitionName, duration } = req.body;
+      if (action === 'setTransition') {
+        await obsServices.obsCore.call('SetCurrentSceneTransition', { transitionName });
+        res.json({ success: true });
+      } else if (action === 'setDuration') {
+        await obsServices.obsCore.call('SetCurrentSceneTransitionDuration', { transitionDuration: parseInt(duration) });
+        res.json({ success: true });
+      } else {
+        res.status(400).json({ error: 'Invalid action' });
+      }
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Filters endpoints
+  context.web.registerRoute('GET', '/api/obs/filters', async function(req, res) {
+    try {
+      const sourceName = req.query.sourceName;
+      if (!sourceName) {
+        return res.status(400).json({ error: 'Source name required' });
+      }
+      const filterList = await obsServices.obsCore.call('GetSourceFilterList', { sourceName });
+      res.json({ filters: filterList.filters || [] });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  context.web.registerRoute('POST', '/api/obs/filters', async function(req, res) {
+    try {
+      const { action, sourceName, filterName, filterKind, filterSettings, enabled } = req.body;
+      if (action === 'create') {
+        await obsServices.obsCore.call('CreateSourceFilter', { sourceName, filterName, filterKind, filterSettings: filterSettings || {} });
+        res.json({ success: true });
+      } else if (action === 'remove') {
+        await obsServices.obsCore.call('RemoveSourceFilter', { sourceName, filterName });
+        res.json({ success: true });
+      } else if (action === 'setEnabled') {
+        await obsServices.obsCore.call('SetSourceFilterEnabled', { sourceName, filterName, filterEnabled: enabled });
+        res.json({ success: true });
+      } else if (action === 'setSettings') {
+        await obsServices.obsCore.call('SetSourceFilterSettings', { sourceName, filterName, filterSettings });
+        res.json({ success: true });
+      } else {
+        res.status(400).json({ error: 'Invalid action' });
+      }
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Transforms endpoints
+  context.web.registerRoute('GET', '/api/obs/transforms', async function(req, res) {
+    try {
+      const sceneName = req.query.sceneName;
+      const sceneItemId = req.query.sceneItemId;
+      if (!sceneName || !sceneItemId) {
+        return res.status(400).json({ error: 'Scene name and item ID required' });
+      }
+      const transform = await obsServices.obsCore.call('GetSceneItemTransform', { sceneName, sceneItemId: parseInt(sceneItemId) });
+      res.json({ transform: transform.sceneItemTransform || {} });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  context.web.registerRoute('POST', '/api/obs/transforms', async function(req, res) {
+    try {
+      const { sceneName, sceneItemId, transform } = req.body;
+      await obsServices.obsCore.call('SetSceneItemTransform', { sceneName, sceneItemId: parseInt(sceneItemId), sceneItemTransform: transform });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Screenshots endpoints
+  context.web.registerRoute('POST', '/api/obs/screenshots', async function(req, res) {
+    try {
+      const { action, sourceName, imageFilePath, imageFormat, imageWidth, imageHeight, imageCompressionQuality } = req.body;
+      if (action === 'save') {
+        const params = { sourceName, imageFormat: imageFormat || 'png', imageFilePath };
+        if (imageWidth) params.imageWidth = parseInt(imageWidth);
+        if (imageHeight) params.imageHeight = parseInt(imageHeight);
+        if (imageCompressionQuality !== undefined) params.imageCompressionQuality = parseInt(imageCompressionQuality);
+        await obsServices.obsCore.call('SaveSourceScreenshot', params);
+        res.json({ success: true });
+      } else if (action === 'get') {
+        const params = { sourceName, imageFormat: imageFormat || 'png' };
+        if (imageWidth) params.imageWidth = parseInt(imageWidth);
+        if (imageHeight) params.imageHeight = parseInt(imageHeight);
+        if (imageCompressionQuality !== undefined) params.imageCompressionQuality = parseInt(imageCompressionQuality);
+        const screenshot = await obsServices.obsCore.call('GetSourceScreenshot', params);
+        res.json({ success: true, imageData: screenshot.imageData || '' });
+      } else {
+        res.status(400).json({ error: 'Invalid action' });
+      }
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Inputs endpoints
+  context.web.registerRoute('GET', '/api/obs/inputs', async function(req, res) {
+    try {
+      const inputName = req.query.inputName;
+      if (!inputName) {
+        return res.status(400).json({ error: 'Input name required' });
+      }
+      const inputSettings = await obsServices.obsCore.call('GetInputSettings', { inputName });
+      res.json({ settings: inputSettings.inputSettings || {}, kind: inputSettings.inputKind || '' });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  context.web.registerRoute('POST', '/api/obs/inputs', async function(req, res) {
+    try {
+      const { action, sceneName, inputName, inputKind, inputSettings, newName } = req.body;
+      if (action === 'create') {
+        await obsServices.obsCore.call('CreateInput', { sceneName, inputName, inputKind, inputSettings: inputSettings || {}, sceneItemEnabled: true });
+        res.json({ success: true });
+      } else if (action === 'remove') {
+        await obsServices.obsCore.call('RemoveInput', { inputName });
+        res.json({ success: true });
+      } else if (action === 'setSettings') {
+        await obsServices.obsCore.call('SetInputSettings', { inputName, inputSettings });
+        res.json({ success: true });
+      } else if (action === 'rename') {
+        await obsServices.obsCore.call('SetInputName', { inputName, newInputName: newName });
+        res.json({ success: true });
+      } else {
+        res.status(400).json({ error: 'Invalid action' });
+      }
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 }
 
 /**
@@ -1769,7 +2085,7 @@ function registerWebSocketHandler(context, obsServices, automationEngine) {
 
 module.exports = {
   name: 'obs-control',
-  version: '0.9.6',
+  version: '0.9.7',
 
   /**
    * Configuration schema

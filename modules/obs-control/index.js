@@ -1462,6 +1462,10 @@ function getPublicAPI(context) {
  * Register all API routes for the web UI
  */
 function registerAPIRoutes(context, obsServices, automationEngine) {
+  // IMPORTANT: Routes registered WITHOUT /modules/obs-master-control prefix
+  // Core automatically prepends that when mounting module routes
+  // So '/api/obs/status' becomes '/modules/obs-master-control/api/obs/status'
+  
   // Status endpoint
   context.web.registerRoute('GET', '/api/obs/status', async function(req, res) {
     try {
@@ -2085,7 +2089,7 @@ function registerWebSocketHandler(context, obsServices, automationEngine) {
 
 module.exports = {
   name: 'obs-control',
-  version: '0.9.7',
+  version: '0.9.8',
 
   /**
    * Configuration schema

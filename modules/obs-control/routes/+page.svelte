@@ -3,6 +3,10 @@
 	import { connectionStatus } from './stores/obsStatus.js';
 	import { initializeWebSocket } from './lib/websocket.js';
 
+	// Module routes are at /modules/obs-master-control/*
+	// Static assets are at /module-ui/obs-master-control/*
+	const API_PREFIX = '/modules/obs-master-control';
+
 	// OBS State - NOW REAL DATA
 	let scenes = [];
 	let currentScene = '';
@@ -81,7 +85,7 @@
 
 	async function loadScenes() {
 		try {
-			const response = await fetch('/api/obs/scenes');
+			const response = await fetch(`${API_PREFIX}/api/obs/scenes`);
 			const data = await response.json();
 			scenes = data.scenes.map(s => s.sceneName || s.name);
 			currentScene = data.currentScene;
@@ -109,7 +113,7 @@
 
 	async function loadAudioSources() {
 		try {
-			const response = await fetch('/api/obs/audio');
+			const response = await fetch(`${API_PREFIX}/api/obs/audio`);
 			const data = await response.json();
 			audioSources = data.audioSources.map(s => ({
 				...s,
@@ -122,7 +126,7 @@
 
 	async function loadControls() {
 		try {
-			const response = await fetch('/api/obs/controls');
+			const response = await fetch(`${API_PREFIX}/api/obs/controls`);
 			const data = await response.json();
 			streaming = data.streaming;
 			recording = data.recording;
@@ -137,7 +141,7 @@
 
 	async function loadTransitions() {
 		try {
-			const response = await fetch('/api/obs/transitions');
+			const response = await fetch(`${API_PREFIX}/api/obs/transitions`);
 			const data = await response.json();
 			availableTransitions = data.transitions || [];
 			currentTransition = data.currentTransition || 'Fade';
@@ -150,7 +154,7 @@
 	// Scene Management
 	async function selectScene(scene) {
 		try {
-			await fetch('/api/obs/scenes', {
+			await fetch(`${API_PREFIX}/api/obs/scenes`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ action: 'setCurrentScene', sceneName: scene })
@@ -168,7 +172,7 @@
 		if (!newScene) return;
 		
 		try {
-			await fetch('/api/obs/scenes', {
+			await fetch(`${API_PREFIX}/api/obs/scenes`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ action: 'createScene', sceneName: newScene })
@@ -189,7 +193,7 @@
 		if (!confirmed) return;
 		
 		try {
-			await fetch('/api/obs/scenes', {
+			await fetch(`${API_PREFIX}/api/obs/scenes`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ action: 'removeScene', sceneName: currentScene })
@@ -205,7 +209,7 @@
 	async function toggleSourceVisibility(index) {
 		const source = sources[index];
 		try {
-			await fetch('/api/obs/sources', {
+			await fetch(`${API_PREFIX}/api/obs/sources`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ 
@@ -225,7 +229,7 @@
 	async function toggleSourceLock(index) {
 		const source = sources[index];
 		try {
-			await fetch('/api/obs/sources', {
+			await fetch(`${API_PREFIX}/api/obs/sources`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ 
@@ -246,7 +250,7 @@
 	async function toggleMute(index) {
 		const source = audioSources[index];
 		try {
-			await fetch('/api/obs/audio', {
+			await fetch(`${API_PREFIX}/api/obs/audio`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ 
@@ -265,7 +269,7 @@
 		const volume = parseInt(event.target.value);
 		const source = audioSources[index];
 		try {
-			await fetch('/api/obs/audio', {
+			await fetch(`${API_PREFIX}/api/obs/audio`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ 
@@ -284,7 +288,7 @@
 	// Streaming & Recording
 	async function toggleStreaming() {
 		try {
-			await fetch('/api/obs/controls', {
+			await fetch(`${API_PREFIX}/api/obs/controls`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ action: 'toggleStreaming' })
@@ -298,7 +302,7 @@
 
 	async function toggleRecording() {
 		try {
-			await fetch('/api/obs/controls', {
+			await fetch(`${API_PREFIX}/api/obs/controls`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ action: 'toggleRecording' })
@@ -312,7 +316,7 @@
 
 	async function toggleVirtualCam() {
 		try {
-			await fetch('/api/obs/controls', {
+			await fetch(`${API_PREFIX}/api/obs/controls`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ action: 'toggleVirtualCam' })
@@ -326,7 +330,7 @@
 
 	async function toggleStudioMode() {
 		try {
-			await fetch('/api/obs/controls', {
+			await fetch(`${API_PREFIX}/api/obs/controls`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ action: 'toggleStudioMode' })
@@ -340,7 +344,7 @@
 
 	async function toggleReplayBuffer() {
 		try {
-			await fetch('/api/obs/controls', {
+			await fetch(`${API_PREFIX}/api/obs/controls`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ action: 'toggleReplayBuffer' })
@@ -358,7 +362,7 @@
 			return;
 		}
 		try {
-			await fetch('/api/obs/controls', {
+			await fetch(`${API_PREFIX}/api/obs/controls`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ action: 'saveReplay' })
@@ -373,7 +377,7 @@
 	// Transitions
 	async function setTransition(transitionName) {
 		try {
-			await fetch('/api/obs/transitions', {
+			await fetch(`${API_PREFIX}/api/obs/transitions`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ action: 'setTransition', transitionName })
@@ -387,7 +391,7 @@
 
 	async function setTransitionDuration() {
 		try {
-			await fetch('/api/obs/transitions', {
+			await fetch(`${API_PREFIX}/api/obs/transitions`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ action: 'setDuration', duration: transitionDuration })
@@ -426,7 +430,7 @@
 		if (!filterKind) return;
 		
 		try {
-			await fetch('/api/obs/filters', {
+			await fetch(`${API_PREFIX}/api/obs/filters`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ 
@@ -449,7 +453,7 @@
 		if (!confirmed) return;
 		
 		try {
-			await fetch('/api/obs/filters', {
+			await fetch(`${API_PREFIX}/api/obs/filters`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ 
@@ -468,7 +472,7 @@
 	async function toggleFilter(filterName, enabled) {
 		if (!selectedSource) return;
 		try {
-			await fetch('/api/obs/filters', {
+			await fetch(`${API_PREFIX}/api/obs/filters`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ 
@@ -506,7 +510,7 @@
 	async function updateTransform() {
 		if (!selectedSource || !sourceTransform) return;
 		try {
-			await fetch('/api/obs/transforms', {
+			await fetch(`${API_PREFIX}/api/obs/transforms`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ 
@@ -537,7 +541,7 @@
 		if (!filePath) return;
 		
 		try {
-			await fetch('/api/obs/screenshots', {
+			await fetch(`${API_PREFIX}/api/obs/screenshots`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ 
@@ -580,7 +584,7 @@
 	async function updateText() {
 		if (!selectedSource) return;
 		try {
-			await fetch('/api/obs/inputs', {
+			await fetch(`${API_PREFIX}/api/obs/inputs`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ 

@@ -738,15 +738,6 @@
 							</div>
 						</div>
 						<div class="channel-controls">
-							<input 
-								type="range" 
-								min="0" 
-								max="100" 
-								value={audio.volume}
-								on:input={(e) => updateVolume(i, e)}
-								class="volume-slider"
-								orient="vertical"
-							/>
 							<button 
 								class="mute-btn"
 								class:muted={audio.muted}
@@ -755,7 +746,24 @@
 							>
 								{audio.muted ? '🔇' : '🔊'}
 							</button>
-							<span class="volume-value">{audio.volume}%</span>
+							<input 
+								type="number" 
+								min="0" 
+								max="100" 
+								step="1"
+								value={audio.volume}
+								on:input={(e) => updateVolume(i, e)}
+								class="volume-input"
+							/>
+							<input 
+								type="range" 
+								min="0" 
+								max="100" 
+								step="1"
+								value={audio.volume}
+								on:input={(e) => updateVolume(i, e)}
+								class="volume-slider"
+							/>
 						</div>
 					</div>
 				{/each}
@@ -1320,13 +1328,15 @@
 	}
 
 	.channel-label {
-		font-size: 11px;
-		color: #adadb8;
+		font-size: 12px;
+		font-weight: 500;
+		color: #e0e0e8;
 		text-align: center;
 		width: 100%;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+		margin-bottom: 4px;
 	}
 
 	.channel-meter {
@@ -1380,9 +1390,20 @@
 		background: #e91916;
 	}
 
-	.volume-value {
-		font-size: 11px;
-		color: #adadb8;
+	.volume-input {
+		width: 50px;
+		padding: 4px 6px;
+		background: #2a2a3a;
+		border: 1px solid #3a3a4a;
+		border-radius: 3px;
+		color: #e0e0e8;
+		font-size: 12px;
+		text-align: center;
+	}
+
+	.volume-input:focus {
+		outline: none;
+		border-color: #6366f1;
 	}
 
 	.volume-slider {

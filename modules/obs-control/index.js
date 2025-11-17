@@ -2089,7 +2089,7 @@ function registerWebSocketHandler(context, obsServices, automationEngine) {
 
 module.exports = {
   name: 'obs-control',
-  version: '0.9.14',
+  version: '0.9.15',
 
   /**
    * Configuration schema
@@ -2357,9 +2357,9 @@ module.exports = {
           // Register API endpoints FIRST (before static middleware that might catch-all)
           registerAPIRoutes(context, obsServices, automationEngine);
 
-          // Serve static UI files from build directory at root
-          // Core v2.0.209+ mounts at /module-ui/:moduleId automatically
-          context.web.serveStatic('/', './build', {
+          // Serve static UI files from build directory at /ui
+          // Core v2.0.214: Routes to /modules/:moduleId/ui/ to distinguish from admin config
+          context.web.serveStatic('/ui', './build', {
             moduleContext: {
               obs: obsServices,
               context: context
@@ -2371,7 +2371,7 @@ module.exports = {
             registerWebSocketHandler(context, obsServices, automationEngine);
           }
 
-          context.logger.info(`OBS Control UI available at ${context.web.getBaseUrl()}`);
+          context.logger.info(`OBS Control UI available at ${context.web.getBaseUrl()}/ui`);
         } catch (uiError) {
           context.logger.error('Failed to register web UI', { error: uiError.message });
           // Don't throw - UI is optional, backend should still work

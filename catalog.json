@@ -1,13 +1,13 @@
 {
-  "version": "1.0.24",
-  "lastUpdated": "2025-11-17T15:00:00Z",
+  "version": "1.0.25",
+  "lastUpdated": "2025-11-17T15:15:00Z",
   "description": "Official GothBot Module Marketplace",
   "modules": [
     {
       "id": "obs-master-control",
       "moduleId": "obs-master-control",
       "name": "OBS Master Control Panel",
-      "version": "0.9.14",
+      "version": "0.9.15",
       "description": "Complete OBS Studio remote control panel with web-based UI - audio mixing, streaming, recording, scene item transforms, filters, transitions, studio mode, and web dashboard. Like having OBS Studio's UI in your browser with real-time live updates.",
       "author": "GothBot Team",
       "category": "infrastructure",
@@ -20,7 +20,7 @@
         "ui": {
           "title": "OBS Master Control",
           "description": "Complete OBS Studio remote control panel with dashboard",
-          "entrypoint": "/",
+          "entrypoint": "/ui",
           "directory": "build",
           "icon": "🎛️",
           "files": ["build/**/*"]

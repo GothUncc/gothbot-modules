@@ -1769,7 +1769,7 @@ function registerWebSocketHandler(context, obsServices, automationEngine) {
 
 module.exports = {
   name: 'obs-control',
-  version: '1.0.0',
+  version: '0.9.5',
 
   /**
    * Configuration schema
@@ -2001,6 +2001,12 @@ module.exports = {
       // Setup components
       alertEngine = new DynamicAlertEngine(obsServices, context);
       automationEngine = new AutomationEngine(obsServices, context);
+
+      // CRITICAL: Share context with SvelteKit server for API routes
+      // Import the shared context setter
+      const sharedContext = require('./src/shared-context.js');
+      sharedContext.setModuleContext(context, obsServices, alertEngine, automationEngine);
+      context.logger.info('Module context shared with SvelteKit server');
 
       // Connection event handlers
       obsServices.on('connected', function() {

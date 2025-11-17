@@ -43,8 +43,8 @@ AI COLLABORATION PROTOCOL:
 -->
 
 ## META
-- Updated: 2025-11-16T14:00:00Z
-- Version: 1.0.11
+- Updated: 2025-11-17T07:30:00Z
+- Version: 1.0.22
 - Status: MODULE_MARKETPLACE_CATALOG
 - Repo: https://github.com/GothUncc/gothbot-modules
 - Core: https://github.com/GothUncc/gothomationbotV2
@@ -193,14 +193,13 @@ WebSocket broadcast to frontend
 - Admin config remains at /modules/:id (SvelteKit route)
 
 ## KNOWN_ISSUES
-- Core System: Module dashboard URL pattern changed (v2.0.209)
-  - Breaking change: Module UIs now at /module-ui/:moduleId (was /modules/:moduleId/)
-  - Root cause: SvelteKit router conflict - both admin config and module UI used /modules/ path
-  - Solution: Complete URL separation - admin config at /modules/:id, module UI at /module-ui/:id
-  - Impact: context.web.getBaseUrl() now returns /module-ui/:moduleId
-  - Module compatibility: No changes needed if using relative paths and getBaseUrl()
-  - Status: RESOLVED v2.0.209 - Dashboard button now routes correctly
-  - Documentation: CORE_TO_MOD_URL_PATTERN_CHANGE.md
+- Core System: Static middleware intercepts API routes (v0.9.7-0.9.11)
+  - Status: RESOLVED v2.0.209 - Core changed URL pattern, module updated v0.9.12
+  - Root cause: serveStatic() created catch-all under /modules/ path
+  - After 5 failed attempts (trailing slash logic), Core chose complete URL separation
+  - Solution: Module dashboards at /module-ui/:id, admin config at /modules/:id
+  - Module fix: Changed API_PREFIX from /modules/obs-master-control to /module-ui/obs-master-control
+  - Documentation: MOD_TO_CORE_ROUTING_CONFLICT.md, CORE_TO_MOD responses
 - Core System: Module serving path changes require container restart
   - Status: LIMITATION - Express middleware chain behavior
   - Root cause: Old routers not unmounted when modules reload, shadow new routes
@@ -219,16 +218,22 @@ WebSocket broadcast to frontend
 
 ## RECENT_CHANGES
 
-### v1.0.11 (2025-11-16T14:00)
-- Core System: Module dashboard URL pattern change (v2.0.209)
-- Breaking change: /modules/:id/ → /module-ui/:id (admin config vs module UI separation)
-- Dashboard button routing issue RESOLVED - 5 failed attempts led to complete URL separation
-- catalog.json: No changes needed (uiPath is relative entrypoint, not full URL)
-- Module compatibility: OBS Master Control uses relative paths + getBaseUrl() - fully compatible
-- Backend now constructs: /module-ui/{moduleId} + uiPath
-- WebSocket endpoint: /module-ui/{moduleId}/ws
-- Updated catalog version: 1.0.10 → 1.0.11, timestamp: 2025-11-16T14:00:00Z
-- Status: Awaiting Core deployment (Docker build in progress)
+### v1.0.22 (2025-11-17T07:30)
+- OBS Master Control v0.9.12: Core v2.0.209 URL pattern compatibility
+- Issue: Static middleware intercepted API routes (v0.9.7-0.9.11) - ALL requests got HTML instead of JSON
+- Core fix: Moved module dashboards from /modules/:id to /module-ui/:id (complete URL separation)
+- Module fix: Updated API_PREFIX from /modules/obs-master-control to /module-ui/obs-master-control
+- File changed: routes/+page.svelte (line 8), rebuilt UI with new prefix
+- Collaboration: MOD_TO_CORE_ROUTING_CONFLICT.md → Core responded with v2.0.209 changes
+- Updated catalog version: 1.0.21 → 1.0.22, module: 0.9.11 → 0.9.12
+- Status: DEPLOYED - Module now compatible with Core v2.0.209+
+
+### v1.0.21 (2025-11-17T06:40)
+- OBS Master Control v0.9.11: Registration order fix (ineffective)
+- Attempted fix: Moved registerAPIRoutes() before serveStatic()
+- Result: No change - static middleware still intercepted API routes
+- Root cause: serveStatic() creates catch-all behavior regardless of order
+- Led to Core investigation and v2.0.209 architectural fix
 
 ### v1.0.10 (2025-11-11T15:50)
 - OBS Master Control Module: Integrated v2.0.192+ dashboard visibility system

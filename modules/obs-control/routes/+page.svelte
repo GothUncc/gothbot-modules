@@ -647,258 +647,500 @@
 			alert('Failed to update text: ' + error.message);
 		}
 	}
+
+	// Tab Management
+	let activeTab = 'control';
+	const tabs = [
+		{ id: 'control', label: 'Control', svgPath: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z' },
+		{ id: 'scenes', label: 'Scenes', svgPath: 'M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z' },
+		{ id: 'sources', label: 'Sources', svgPath: 'M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM5 10h5v7H5zm7-4h7v3h-7zm0 4h7v7h-7z' },
+		{ id: 'audio', label: 'Audio', svgPath: 'M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z' },
+		{ id: 'stats', label: 'Stats', svgPath: 'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z' },
+		{ id: 'settings', label: 'Settings', svgPath: 'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z' }
+	];
+
+	function switchTab(tabId) {
+		activeTab = tabId;
+	}
 </script>
 
-<!-- OBS Studio Layout -->
+<!-- Tab-Based Layout v2.0.0 -->
 <div class="obs-layout">
-	<!-- Top Menu Bar -->
-	<div class="menu-bar">
-		<div class="menu-items">
-			<button class="menu-btn">File</button>
-			<button class="menu-btn">View</button>
-			<button class="menu-btn">Tools</button>
-			<button class="menu-btn">Help</button>
+	<!-- Top Header Bar -->
+	<div class="header-bar">
+		<div class="header-left">
+			<h1 class="app-title">
+				<svg class="title-icon" viewBox="0 0 24 24" fill="currentColor">
+					<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+				</svg>
+				OBS Master Control
+			</h1>
 		</div>
-		<div class="menu-right">
+		<div class="header-right">
 			<div class="status-badge" class:connected={$connectionStatus === 'connected'}>
 				<span class="dot"></span>
 				{$connectionStatus === 'connected' ? 'Connected' : 'Offline'}
 			</div>
-			<a href="/modules" class="back-btn">← Back to Core</a>
+			<a href="/modules" class="back-btn">← Back to Modules</a>
 		</div>
 	</div>
 
-	<!-- Main Content -->
-	<div class="main-content">
-		<!-- Left Panel: Scenes -->
-		<div class="panel scenes-panel">
-			<div class="panel-header">
-				<span class="panel-title">Scenes</span>
-				<div class="panel-controls">
-					<button class="icon-btn" title="Add Scene" on:click={addScene}>+</button>
-					<button class="icon-btn" title="Remove Scene" on:click={removeScene}>−</button>
-					<button class="icon-btn" title="Move Up">↑</button>
-					<button class="icon-btn" title="Move Down">↓</button>
-				</div>
-			</div>
-			<div class="panel-content">
-				{#each scenes as scene}
-					<button 
-						class="list-item" 
-						class:active={scene === currentScene}
-						on:click={() => selectScene(scene)}
-					>
-						<span class="scene-icon">🎬</span>
-						{scene}
-					</button>
-				{/each}
-			</div>
-		</div>
+	<!-- Tab Navigation -->
+	<div class="tabs-nav">
+		{#each tabs as tab}
+			<button 
+				class="tab-btn" 
+				class:active={activeTab === tab.id}
+				on:click={() => switchTab(tab.id)}
+			>
+				<svg class="tab-icon" viewBox="0 0 24 24" fill="currentColor">
+					<path d={tab.svgPath}/>
+				</svg>
+				<span class="tab-label">{tab.label}</span>
+			</button>
+		{/each}
+	</div>
 
-		<!-- Center: Preview/Canvas -->
-		<div class="preview-container">
-			<div class="preview-canvas">
-				<div class="preview-placeholder">
-					<div class="preview-info">
-						<div class="preview-scene">
-							<span class="scene-badge">🎬</span>
-							{currentScene}
+	<!-- Tab Content -->
+	<div class="tab-content">
+		
+		<!-- TAB 1: CONTROL -->
+		{#if activeTab === 'control'}
+			<div class="control-tab">
+				
+				<!-- Streaming & Recording Cards -->
+				<div class="card-grid">
+					<!-- Streaming Card -->
+					<div class="status-card">
+						<div class="card-header">
+							<span class="card-icon">{streaming ? '🔴' : '⚫'}</span>
+							<h3 class="card-title">Streaming</h3>
 						</div>
-						<div class="preview-status">
-							{#if streaming}<span class="status-live">🔴 LIVE</span>{/if}
-							{#if recording}<span class="status-rec">⏺️ REC</span>{/if}
-							{#if virtualCam}<span class="status-vcam">📷 VCAM</span>{/if}
+						<div class="card-body">
+							<div class="status-indicator" class:active={streaming}>
+								{streaming ? 'LIVE' : 'Offline'}
+							</div>
+							{#if streaming}
+								<div class="card-stats">
+									<div class="stat-row">
+										<span class="stat-label">Bitrate:</span>
+										<span class="stat-value">{stats.kbps} kbps</span>
+									</div>
+								</div>
+							{/if}
+							<button 
+								class="control-btn primary"
+								class:active={streaming}
+								on:click={toggleStreaming}
+							>
+								{streaming ? 'Stop Stream' : 'Start Stream'}
+							</button>
 						</div>
-						<div class="preview-stats">
-							<div class="stat-item">
-								<span class="stat-label">CPU:</span>
+					</div>
+
+					<!-- Recording Card -->
+					<div class="status-card">
+						<div class="card-header">
+							<span class="card-icon">{recording ? '⏺️' : '⚫'}</span>
+							<h3 class="card-title">Recording</h3>
+						</div>
+						<div class="card-body">
+							<div class="status-indicator" class:active={recording}>
+								{recording ? 'REC' : 'Not Recording'}
+							</div>
+							<button 
+								class="control-btn primary"
+								class:active={recording}
+								on:click={toggleRecording}
+							>
+								{recording ? 'Stop Recording' : 'Start Recording'}
+							</button>
+						</div>
+					</div>
+
+					<!-- Virtual Camera Card -->
+					<div class="status-card">
+						<div class="card-header">
+							<span class="card-icon">{virtualCam ? '📹' : '⚫'}</span>
+							<h3 class="card-title">Virtual Camera</h3>
+						</div>
+						<div class="card-body">
+							<div class="status-indicator" class:active={virtualCam}>
+								{virtualCam ? 'Active' : 'Stopped'}
+							</div>
+							<button 
+								class="control-btn primary"
+								class:active={virtualCam}
+								on:click={toggleVirtualCam}
+							>
+								{virtualCam ? 'Stop VCam' : 'Start VCam'}
+							</button>
+						</div>
+					</div>
+
+					<!-- Replay Buffer Card -->
+					<div class="status-card">
+						<div class="card-header">
+							<span class="card-icon">{replayBuffer ? '⏮️' : '⚫'}</span>
+							<h3 class="card-title">Replay Buffer</h3>
+						</div>
+						<div class="card-body">
+							<div class="status-indicator" class:active={replayBuffer}>
+								{replayBuffer ? 'Active' : 'Inactive'}
+							</div>
+							<button 
+								class="control-btn primary"
+								class:active={replayBuffer}
+								on:click={toggleReplayBuffer}
+							>
+								{replayBuffer ? 'Stop Buffer' : 'Start Buffer'}
+							</button>
+							<button 
+								class="control-btn secondary"
+								on:click={saveReplay}
+								disabled={!replayBuffer}
+							>
+								💿 Save Replay
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<!-- Active Scene Panel -->
+				<div class="scene-panel">
+					<div class="panel-header">
+						<h3>Active Scene</h3>
+					</div>
+					<div class="panel-body">
+						<div class="scene-selector">
+							<label class="scene-label">Current Scene:</label>
+							<select class="scene-select" value={currentScene} on:change={(e) => selectScene(e.target.value)}>
+								{#each scenes as scene}
+									<option value={scene}>{scene}</option>
+								{/each}
+							</select>
+						</div>
+
+						<!-- Quick Scene Buttons -->
+						<div class="quick-scenes">
+							{#each scenes.slice(0, 6) as scene}
+								<button 
+									class="quick-scene-btn" 
+									class:active={scene === currentScene}
+									on:click={() => selectScene(scene)}
+								>
+									{scene}
+								</button>
+							{/each}
+						</div>
+
+						<!-- Performance Stats -->
+						<div class="performance-stats">
+							<div class="stat-box">
+								<span class="stat-label">CPU</span>
 								<span class="stat-value">{stats.cpu}%</span>
 							</div>
-							<div class="stat-item">
-								<span class="stat-label">FPS:</span>
-								<span class="stat-value">{stats.fps.toFixed(2)}</span>
+							<div class="stat-box">
+								<span class="stat-label">FPS</span>
+								<span class="stat-value">{stats.fps.toFixed(1)}</span>
 							</div>
-							<div class="stat-item">
-								<span class="stat-label">Render:</span>
+							<div class="stat-box">
+								<span class="stat-label">Render</span>
 								<span class="stat-value">{stats.renderTime}</span>
 							</div>
-							<div class="stat-item">
-								<span class="stat-label">Dropped:</span>
+							<div class="stat-box">
+								<span class="stat-label">Dropped</span>
 								<span class="stat-value">{stats.dropped}</span>
 							</div>
 						</div>
-					</div>
-				</div>
-			</div>
-		</div>
 
-		<!-- Right Panel: Sources -->
-		<div class="panel sources-panel">
-			<div class="panel-header">
-				<span class="panel-title">Sources</span>
-				<div class="panel-controls">
-					<button class="icon-btn" title="Add Source">+</button>
-					<button class="icon-btn" title="Remove Source">−</button>
-					<button class="icon-btn" title="Move Up">↑</button>
-					<button class="icon-btn" title="Move Down">↓</button>
-				</div>
-			</div>
-			<div class="panel-content">
-				{#each sources as source, i}
-					<div class="list-item source-item">
-						<button 
-							class="source-icon-btn" 
-							on:click={() => toggleSourceVisibility(i)}
-							title={source.visible ? 'Hide' : 'Show'}
-							style="opacity: {source.visible ? '1' : '0.3'};"
-						>
-							{source.visible ? '👁️' : '👁️‍🗨️'}
-						</button>
-						<button 
-							class="source-icon-btn"
-							class:locked={source.locked}
-							on:click={() => toggleSourceLock(i)}
-							title={source.locked ? 'Unlock' : 'Lock'}
-						>
-							{source.locked ? '🔒' : '🔓'}
-						</button>
-						<span class="source-name">{source.name}</span>
-						<span class="source-type">{source.type}</span>
-						<div class="source-actions">
-							<button class="action-btn" on:click={() => selectSource(source)} title="Filters">🎨</button>
-							<button class="action-btn" on:click={() => showTransformControls(source)} title="Transform">📐</button>
-							<button class="action-btn" on:click={() => showScreenshotControls(source)} title="Screenshot">📷</button>
-							{#if source.type === 'text_gdiplus' || source.type === 'text_ft2_source'}
-								<button class="action-btn" on:click={() => showTextEdit(source)} title="Edit Text">📝</button>
-							{/if}
-						</div>
-					</div>
-				{/each}
-			</div>
-		</div>
-	</div>
-
-	<!-- Bottom Section -->
-	<div class="bottom-section">
-		<!-- Audio Mixer -->
-		<div class="audio-mixer">
-			<div class="mixer-header">
-				<span class="panel-title">Audio Mixer</span>
-			</div>
-			<div class="mixer-channels">
-				{#each audioSources as audio, i}
-					<div class="mixer-channel">
-						<div class="channel-label" title={audio.name}>{audio.name}</div>
-						<div class="channel-meter">
-							<div class="meter-bar">
-								<div class="meter-fill" style="--peak-height: {audio.peak}%"></div>
-							</div>
-						</div>
-						<div class="channel-controls">
-							<button 
-								class="mute-btn"
-								class:muted={audio.muted}
-								on:click={() => toggleMute(i)}
-								title={audio.muted ? 'Unmute' : 'Mute'}
-							>
-								{audio.muted ? '🔇' : '🔊'}
-							</button>
+						<!-- Transition Controls -->
+						<div class="transition-controls">
+							<label class="control-label">Transition:</label>
+							<select class="transition-select" value={currentTransition} on:change={(e) => setTransition(e.target.value)}>
+								{#each availableTransitions as transition}
+									<option value={transition.transitionName}>{transition.transitionName}</option>
+								{/each}
+							</select>
+							<label class="control-label">Duration:</label>
 							<input 
 								type="number" 
-								min="0" 
-								max="100" 
-								step="1"
-								value={audio.volume}
-								on:input={(e) => updateVolume(i, e)}
-								class="volume-input"
-							/>
-							<input 
-								type="range" 
-								min="0" 
-								max="100" 
-								step="1"
-								value={audio.volume}
-								on:input={(e) => updateVolume(i, e)}
-								class="volume-slider"
-							/>
+								bind:value={transitionDuration}
+								on:change={setTransitionDuration}
+								min="50"
+								max="2000"
+								step="50"
+								class="duration-input"
+							/> <span class="unit">ms</span>
 						</div>
 					</div>
-				{/each}
-			</div>
-		</div>
+				</div>
 
-		<!-- Scene Transitions -->
-		<div class="transitions-panel">
-			<div class="panel-title">Scene Transitions</div>
-			<div class="transition-controls">
-				<select class="transition-select" value={currentTransition} on:change={(e) => setTransition(e.target.value)}>
-					{#each availableTransitions as transition}
-						<option value={transition.transitionName}>{transition.transitionName}</option>
+				<!-- Quick Access Bar -->
+				<div class="quick-access">
+					<button class="control-btn secondary" on:click={loadAllData}>
+						🔄 Refresh Data
+					</button>
+					<button 
+						class="control-btn secondary"
+						class:active={studioMode}
+						on:click={toggleStudioMode}
+					>
+						🎬 Studio Mode
+					</button>
+				</div>
+			</div>
+		{/if}
+
+		<!-- TAB 2: SCENES -->
+		{#if activeTab === 'scenes'}
+			<div class="scenes-tab">
+				<div class="tab-header">
+					<h2>Scene Management</h2>
+					<div class="tab-actions">
+						<button class="action-btn primary" on:click={addScene}>+ Add Scene</button>
+						<button class="action-btn danger" on:click={removeScene}>− Remove Scene</button>
+					</div>
+				</div>
+
+				<div class="scenes-grid">
+					{#each scenes as scene}
+						<div class="scene-card" class:active={scene === currentScene}>
+							<div class="scene-card-header">
+								<span class="scene-icon">🎬</span>
+								<h3 class="scene-name">{scene}</h3>
+								{#if scene === currentScene}
+									<span class="active-badge">✓ Active</span>
+								{/if}
+							</div>
+							<button 
+								class="switch-btn"
+								on:click={() => selectScene(scene)}
+								disabled={scene === currentScene}
+							>
+								Switch to Scene
+							</button>
+						</div>
 					{/each}
-				</select>
-				<label class="duration-label">
-					Duration:
-					<input 
-						type="number" 
-						bind:value={transitionDuration}
-						on:change={setTransitionDuration}
-						min="50"
-						max="2000"
-						step="50"
-						class="duration-input"
-					/> ms
-				</label>
-			</div>
-		</div>
+				</div>
 
-		<!-- Controls -->
-		<div class="controls-panel">
-			<button 
-				class="control-btn streaming"
-				class:active={streaming}
-				on:click={toggleStreaming}
-			>
-				{streaming ? '🔴 Stop Streaming' : '⚫ Start Streaming'}
-			</button>
-			<button 
-				class="control-btn recording"
-				class:active={recording}
-				on:click={toggleRecording}
-			>
-				{recording ? '⏹️ Stop Recording' : '⏺️ Start Recording'}
-			</button>
-			<button 
-				class="control-btn virtual-cam"
-				class:active={virtualCam}
-				on:click={toggleVirtualCam}
-			>
-				📷 Virtual Camera
-			</button>
-			<button 
-				class="control-btn studio-mode"
-				class:active={studioMode}
-				on:click={toggleStudioMode}
-			>
-				🎬 Studio Mode
-			</button>
-			<button 
-				class="control-btn replay-buffer"
-				class:active={replayBuffer}
-				on:click={toggleReplayBuffer}
-			>
-				💾 Replay Buffer
-			</button>
-			<button 
-				class="control-btn save-replay"
-				on:click={saveReplay}
-				disabled={!replayBuffer}
-			>
-				💿 Save Replay
-			</button>
-		</div>
+				<div class="sources-in-scene">
+					<h3>Sources in {currentScene}</h3>
+					<div class="source-list">
+						{#each sources as source, i}
+							<div class="source-item-card">
+								<div class="source-info">
+									<button 
+										class="icon-btn" 
+										on:click={() => toggleSourceVisibility(i)}
+										title={source.visible ? 'Hide' : 'Show'}
+										style="opacity: {source.visible ? '1' : '0.3'};"
+									>
+										{source.visible ? '👁️' : '👁️‍🗨️'}
+									</button>
+									<button 
+										class="icon-btn"
+										class:locked={source.locked}
+										on:click={() => toggleSourceLock(i)}
+										title={source.locked ? 'Unlock' : 'Lock'}
+									>
+										{source.locked ? '🔒' : '🔓'}
+									</button>
+									<span class="source-name">{source.name}</span>
+									<span class="source-type">{source.type}</span>
+								</div>
+								<div class="source-actions">
+									<button class="action-btn" on:click={() => selectSource(source)} title="Filters">🎨</button>
+									<button class="action-btn" on:click={() => showTransformControls(source)} title="Transform">📐</button>
+									<button class="action-btn" on:click={() => showScreenshotControls(source)} title="Screenshot">📷</button>
+									{#if source.type === 'text_gdiplus' || source.type === 'text_ft2_source'}
+										<button class="action-btn" on:click={() => showTextEdit(source)} title="Edit Text">📝</button>
+									{/if}
+								</div>
+							</div>
+						{/each}
+					</div>
+				</div>
+			</div>
+		{/if}
+
+		<!-- TAB 3: SOURCES -->
+		{#if activeTab === 'sources'}
+			<div class="sources-tab">
+				<div class="tab-header">
+					<h2>All Sources</h2>
+				</div>
+
+				<div class="source-list">
+					{#each sources as source, i}
+						<div class="source-item-card">
+							<div class="source-info">
+								<button 
+									class="icon-btn" 
+									on:click={() => toggleSourceVisibility(i)}
+									title={source.visible ? 'Hide' : 'Show'}
+									style="opacity: {source.visible ? '1' : '0.3'};"
+								>
+									{source.visible ? '👁️' : '👁️‍🗨️'}
+								</button>
+								<button 
+									class="icon-btn"
+									class:locked={source.locked}
+									on:click={() => toggleSourceLock(i)}
+									title={source.locked ? 'Unlock' : 'Lock'}
+								>
+									{source.locked ? '🔒' : '🔓'}
+								</button>
+								<span class="source-name">{source.name}</span>
+								<span class="source-type">{source.type}</span>
+							</div>
+							<div class="source-actions">
+								<button class="action-btn" on:click={() => selectSource(source)} title="Filters">🎨</button>
+								<button class="action-btn" on:click={() => showTransformControls(source)} title="Transform">📐</button>
+								<button class="action-btn" on:click={() => showScreenshotControls(source)} title="Screenshot">📷</button>
+								{#if source.type === 'text_gdiplus' || source.type === 'text_ft2_source'}
+									<button class="action-btn" on:click={() => showTextEdit(source)} title="Edit Text">📝</button>
+								{/if}
+							</div>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
+
+		<!-- TAB 4: AUDIO -->
+		{#if activeTab === 'audio'}
+			<div class="audio-tab">
+				<div class="tab-header">
+					<h2>Audio Mixer</h2>
+				</div>
+
+				<div class="audio-mixer-enhanced">
+					{#each audioSources as audio, i}
+						<div class="audio-channel">
+							<div class="channel-header">
+								<h4 class="channel-name" title={audio.name}>{audio.name}</h4>
+							</div>
+							<div class="channel-meter">
+								<div class="meter-bar">
+									<div class="meter-fill" style="--peak-height: {audio.peak}%"></div>
+								</div>
+							</div>
+							<div class="channel-controls">
+								<button 
+									class="mute-btn"
+									class:muted={audio.muted}
+									on:click={() => toggleMute(i)}
+									title={audio.muted ? 'Unmute' : 'Mute'}
+								>
+									{audio.muted ? '🔇' : '🔊'}
+								</button>
+								<label class="volume-label">Volume: {audio.volume}%</label>
+								<input 
+									type="range" 
+									min="0" 
+									max="100" 
+									step="1"
+									value={audio.volume}
+									on:input={(e) => updateVolume(i, e)}
+									class="volume-slider"
+								/>
+								<input 
+									type="number" 
+									min="0" 
+									max="100" 
+									step="1"
+									value={audio.volume}
+									on:input={(e) => updateVolume(i, e)}
+									class="volume-input"
+								/>
+							</div>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
+
+		<!-- TAB 5: STATS -->
+		{#if activeTab === 'stats'}
+			<div class="stats-tab">
+				<div class="tab-header">
+					<h2>Performance Metrics</h2>
+				</div>
+
+				<div class="stats-grid">
+					<div class="stat-card">
+						<h3>CPU Usage</h3>
+						<div class="stat-large">{stats.cpu}%</div>
+					</div>
+					<div class="stat-card">
+						<h3>FPS</h3>
+						<div class="stat-large">{stats.fps.toFixed(2)}</div>
+					</div>
+					<div class="stat-card">
+						<h3>Render Time</h3>
+						<div class="stat-large">{stats.renderTime}</div>
+					</div>
+					<div class="stat-card">
+						<h3>Encoding Time</h3>
+						<div class="stat-large">{stats.encodingTime}</div>
+					</div>
+					<div class="stat-card">
+						<h3>Dropped Frames</h3>
+						<div class="stat-large">{stats.dropped}</div>
+					</div>
+					{#if streaming}
+						<div class="stat-card">
+							<h3>Bitrate</h3>
+							<div class="stat-large">{stats.kbps} kbps</div>
+						</div>
+					{/if}
+				</div>
+
+				<div class="connection-info">
+					<h3>Connection Status</h3>
+					<div class="info-row">
+						<span class="info-label">Status:</span>
+						<span class="info-value" class:connected={$connectionStatus === 'connected'}>
+							{$connectionStatus === 'connected' ? '✓ Connected' : '✗ Disconnected'}
+						</span>
+					</div>
+				</div>
+			</div>
+		{/if}
+
+		<!-- TAB 6: SETTINGS -->
+		{#if activeTab === 'settings'}
+			<div class="settings-tab">
+				<div class="tab-header">
+					<h2>Settings & Configuration</h2>
+				</div>
+
+				<div class="settings-section">
+					<h3>Module Information</h3>
+					<p>OBS Master Control Panel - Version 2.0.0</p>
+					<p>Complete OBS Studio remote control with modern tab-based interface</p>
+				</div>
+
+				<div class="settings-section">
+					<h3>Connection</h3>
+					<p>Connection Status: <strong class:connected={$connectionStatus === 'connected'}>
+						{$connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
+					</strong></p>
+					<button class="control-btn primary" on:click={loadAllData}>🔄 Refresh Connection</button>
+				</div>
+
+				<div class="settings-section">
+					<h3>About</h3>
+					<p>This module provides complete remote control of OBS Studio through a modern web interface.</p>
+					<p>Features real-time WebSocket updates for instant synchronization.</p>
+				</div>
+			</div>
+		{/if}
+
 	</div>
 
-	<!-- Advanced Controls Side Panels -->
+	<!-- Advanced Controls Side Panels (Preserved from v1.0.1) -->
 	{#if showFiltersPanel && selectedSource}
 		<div class="side-panel filters-panel-side">
 			<div class="side-panel-header">
@@ -997,61 +1239,61 @@
 </div>
 
 <style>
+	/* v2.0.0 Tab-Based UI Styles */
 	:global(body) {
 		margin: 0;
 		padding: 0;
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
 		background: #1a1a24;
 		color: #efeff1;
-		overflow: hidden;
+		overflow-x: hidden;
 	}
 
-	/* OBS Layout Structure */
+	/* Main Layout Structure */
 	.obs-layout {
 		display: flex;
 		flex-direction: column;
-		height: 100vh;
-		width: 100vw;
+		min-height: 100vh;
 		background: #1a1a24;
 	}
 
-	/* Top Menu Bar */
-	.menu-bar {
-		height: 36px;
+	/* Header Bar */
+	.header-bar {
+		height: 56px;
 		background: #13131a;
 		border-bottom: 1px solid #2a2a3a;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 0 8px;
+		padding: 0 24px;
 		flex-shrink: 0;
 	}
 
-	.menu-items {
-		display: flex;
-		gap: 4px;
-	}
-
-	.menu-btn {
-		padding: 4px 12px;
-		background: transparent;
-		border: none;
-		color: #adadb8;
-		font-size: 13px;
-		cursor: pointer;
-		border-radius: 3px;
-		transition: all 0.15s;
-	}
-
-	.menu-btn:hover {
-		background: #1f1f2e;
-		color: #efeff1;
-	}
-
-	.menu-right {
+	.header-left {
 		display: flex;
 		align-items: center;
-		gap: 12px;
+	}
+
+	.app-title {
+		margin: 0;
+		font-size: 20px;
+		font-weight: 600;
+		color: #efeff1;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.title-icon {
+		width: 24px;
+		height: 24px;
+		color: #9147ff;
+	}
+
+	.header-right {
+		display: flex;
+		align-items: center;
+		gap: 16px;
 	}
 
 	.status-badge {
@@ -1096,17 +1338,745 @@
 		background: #7c3aed;
 	}
 
-	/* Main Content Area */
-	.main-content {
+	/* Tab Navigation */
+	.tabs-nav {
+		background: #13131a;
+		border-bottom: 2px solid #2a2a3a;
+		display: flex;
+		gap: 0;
+		padding: 0 24px;
+		overflow-x: auto;
+	}
+
+	.tab-btn {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 12px 20px;
+		background: transparent;
+		border: none;
+		color: #adadb8;
+		font-size: 14px;
+		font-weight: 500;
+		cursor: pointer;
+		border-bottom: 3px solid transparent;
+		transition: all 0.2s;
+		white-space: nowrap;
+	}
+
+	.tab-btn:hover {
+		background: #1f1f2e;
+		color: #efeff1;
+	}
+
+	.tab-btn.active {
+		color: #9147ff;
+		border-bottom-color: #9147ff;
+		background: #1a1a24;
+	}
+
+	.tab-icon {
+		width: 20px;
+		height: 20px;
+		flex-shrink: 0;
+	}
+
+	.tab-label {
+		font-weight: 600;
+	}
+
+	/* Tab Content Area */
+	.tab-content {
 		flex: 1;
+		overflow-y: auto;
+		padding: 24px;
+		background: #1a1a24;
+	}
+
+	/* Control Tab - Card Grid */
+	.card-grid {
 		display: grid;
-		grid-template-columns: 200px 1fr 200px;
+		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+		gap: 16px;
+		margin-bottom: 24px;
+	}
+
+	.status-card {
+		background: #1f1f2e;
+		border: 1px solid #2a2a3a;
+		border-radius: 8px;
+		padding: 16px;
+		transition: all 0.2s;
+	}
+
+	.status-card:hover {
+		border-color: #3a3a4a;
+	}
+
+	.card-header {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 12px;
+	}
+
+	.card-icon {
+		font-size: 24px;
+	}
+
+	.card-title {
+		margin: 0;
+		font-size: 16px;
+		font-weight: 600;
+		color: #efeff1;
+	}
+
+	.card-body {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
+	.status-indicator {
+		padding: 8px 12px;
+		background: #13131a;
+		border-radius: 4px;
+		text-align: center;
+		font-weight: 600;
+		color: #adadb8;
+	}
+
+	.status-indicator.active {
+		background: #9147ff22;
+		color: #9147ff;
+	}
+
+	.card-stats {
+		display: flex;
+		flex-direction: column;
 		gap: 4px;
-		padding: 4px;
+		font-size: 13px;
+	}
+
+	.stat-row {
+		display: flex;
+		justify-content: space-between;
+	}
+
+	.stat-label {
+		color: #adadb8;
+	}
+
+	.stat-value {
+		color: #efeff1;
+		font-weight: 500;
+	}
+
+	/* Scene Panel */
+	.scene-panel {
+		background: #1f1f2e;
+		border: 1px solid #2a2a3a;
+		border-radius: 8px;
+		padding: 20px;
+		margin-bottom: 24px;
+	}
+
+	.panel-header {
+		margin-bottom: 16px;
+	}
+
+	.panel-header h3 {
+		margin: 0;
+		font-size: 18px;
+		font-weight: 600;
+		color: #efeff1;
+	}
+
+	.panel-body {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+
+	.scene-selector {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	.scene-label {
+		font-weight: 600;
+		color: #efeff1;
+	}
+
+	.scene-select {
+		flex: 1;
+		padding: 8px 12px;
+		background: #13131a;
+		border: 1px solid #2a2a3a;
+		border-radius: 4px;
+		color: #efeff1;
+		font-size: 14px;
+		cursor: pointer;
+	}
+
+	.quick-scenes {
+		display: flex;
+		gap: 8px;
+		flex-wrap: wrap;
+	}
+
+	.quick-scene-btn {
+		padding: 8px 16px;
+		background: #13131a;
+		border: 1px solid #2a2a3a;
+		border-radius: 4px;
+		color: #efeff1;
+		font-size: 13px;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.quick-scene-btn:hover {
+		background: #2a2a3a;
+		border-color: #3a3a4a;
+	}
+
+	.quick-scene-btn.active {
+		background: #9147ff;
+		border-color: #9147ff;
+	}
+
+	.performance-stats {
+		display: flex;
+		gap: 16px;
+		flex-wrap: wrap;
+	}
+
+	.stat-box {
+		flex: 1;
+		min-width: 100px;
+		padding: 12px;
+		background: #13131a;
+		border-radius: 4px;
+		text-align: center;
+	}
+
+	.stat-box .stat-label {
+		display: block;
+		font-size: 12px;
+		color: #adadb8;
+		margin-bottom: 4px;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+
+	.stat-box .stat-value {
+		display: block;
+		font-size: 20px;
+		font-weight: 600;
+		color: #efeff1;
+	}
+
+	.transition-controls {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		flex-wrap: wrap;
+	}
+
+	.control-label {
+		font-weight: 600;
+		color: #efeff1;
+	}
+
+	.transition-select {
+		padding: 8px 12px;
+		background: #13131a;
+		border: 1px solid #2a2a3a;
+		border-radius: 4px;
+		color: #efeff1;
+		font-size: 14px;
+		cursor: pointer;
+	}
+
+	.duration-input {
+		width: 80px;
+		padding: 8px 12px;
+		background: #13131a;
+		border: 1px solid #2a2a3a;
+		border-radius: 4px;
+		color: #efeff1;
+		font-size: 14px;
+	}
+
+	.unit {
+		color: #adadb8;
+		font-size: 13px;
+	}
+
+	.quick-access {
+		display: flex;
+		gap: 12px;
+		flex-wrap: wrap;
+	}
+
+	/* Scenes Tab */
+	.scenes-tab, .sources-tab, .audio-tab, .stats-tab, .settings-tab {
+		max-width: 1400px;
+		margin: 0 auto;
+	}
+
+	.tab-header {
+		margin-bottom: 24px;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.tab-header h2 {
+		margin: 0;
+		font-size: 24px;
+		font-weight: 600;
+		color: #efeff1;
+	}
+
+	.tab-actions {
+		display: flex;
+		gap: 8px;
+	}
+
+	.action-btn {
+		padding: 8px 16px;
+		background: #1f1f2e;
+		border: 1px solid #2a2a3a;
+		border-radius: 4px;
+		color: #efeff1;
+		font-size: 14px;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.action-btn:hover {
+		background: #2a2a3a;
+		border-color: #3a3a4a;
+	}
+
+	.action-btn.primary {
+		background: #9147ff;
+		border-color: #9147ff;
+	}
+
+	.action-btn.primary:hover {
+		background: #7c3aed;
+	}
+
+	.action-btn.danger {
+		background: #e91916;
+		border-color: #e91916;
+	}
+
+	.action-btn.danger:hover {
+		background: #c41715;
+	}
+
+	.scenes-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+		gap: 16px;
+		margin-bottom: 32px;
+	}
+
+	.scene-card {
+		background: #1f1f2e;
+		border: 1px solid #2a2a3a;
+		border-radius: 8px;
+		padding: 16px;
+		transition: all 0.2s;
+	}
+
+	.scene-card:hover {
+		border-color: #3a3a4a;
+	}
+
+	.scene-card.active {
+		border-color: #9147ff;
+		background: #9147ff11;
+	}
+
+	.scene-card-header {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 12px;
+	}
+
+	.scene-icon {
+		font-size: 24px;
+	}
+
+	.scene-name {
+		flex: 1;
+		margin: 0;
+		font-size: 16px;
+		font-weight: 600;
+		color: #efeff1;
+	}
+
+	.active-badge {
+		padding: 4px 8px;
+		background: #9147ff;
+		border-radius: 4px;
+		font-size: 11px;
+		font-weight: 600;
+		color: white;
+	}
+
+	.switch-btn {
+		width: 100%;
+		padding: 10px;
+		background: #13131a;
+		border: 1px solid #2a2a3a;
+		border-radius: 4px;
+		color: #efeff1;
+		font-size: 14px;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.switch-btn:hover:not(:disabled) {
+		background: #9147ff;
+		border-color: #9147ff;
+	}
+
+	.switch-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.sources-in-scene {
+		margin-top: 32px;
+	}
+
+	.sources-in-scene h3 {
+		margin-bottom: 16px;
+		font-size: 20px;
+		font-weight: 600;
+		color: #efeff1;
+	}
+
+	.source-list {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.source-item-card {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 12px;
+		background: #1f1f2e;
+		border: 1px solid #2a2a3a;
+		border-radius: 6px;
+		transition: all 0.2s;
+	}
+
+	.source-item-card:hover {
+		border-color: #3a3a4a;
+		background: #252535;
+	}
+
+	.source-info {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		flex: 1;
+	}
+
+	.source-name {
+		font-weight: 500;
+		color: #efeff1;
+		flex: 1;
+	}
+
+	.source-type {
+		font-size: 12px;
+		color: #adadb8;
+		padding: 4px 8px;
+		background: #13131a;
+		border-radius: 4px;
+	}
+
+	.source-actions {
+		display: flex;
+		gap: 4px;
+	}
+
+	/* Audio Tab */
+	.audio-mixer-enhanced {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+		gap: 16px;
+	}
+
+	.audio-channel {
+		background: #1f1f2e;
+		border: 1px solid #2a2a3a;
+		border-radius: 8px;
+		padding: 16px;
+	}
+
+	.channel-header {
+		margin-bottom: 12px;
+	}
+
+	.channel-name {
+		margin: 0;
+		font-size: 14px;
+		font-weight: 600;
+		color: #efeff1;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.channel-meter {
+		margin-bottom: 12px;
+		height: 120px;
+		display: flex;
+		align-items: flex-end;
+	}
+
+	.meter-bar {
+		width: 100%;
+		height: 100%;
+		background: #13131a;
+		border-radius: 4px;
+		position: relative;
 		overflow: hidden;
 	}
 
-	/* Panels */
+	.meter-fill {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		height: var(--peak-height, 0%);
+		background: linear-gradient(to top, #00f593, #9147ff);
+		transition: height 0.1s;
+	}
+
+	.channel-controls {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.volume-label {
+		font-size: 12px;
+		color: #adadb8;
+		text-align: center;
+	}
+
+	.mute-btn {
+		padding: 8px;
+		background: #13131a;
+		border: 1px solid #2a2a3a;
+		border-radius: 4px;
+		color: #efeff1;
+		font-size: 18px;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.mute-btn:hover {
+		background: #2a2a3a;
+	}
+
+	.mute-btn.muted {
+		background: #e91916;
+		border-color: #e91916;
+	}
+
+	.volume-slider {
+		width: 100%;
+		height: 6px;
+		-webkit-appearance: none;
+		background: #13131a;
+		border-radius: 3px;
+		outline: none;
+	}
+
+	.volume-slider::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 16px;
+		height: 16px;
+		background: #9147ff;
+		cursor: pointer;
+		border-radius: 50%;
+	}
+
+	.volume-slider::-moz-range-thumb {
+		width: 16px;
+		height: 16px;
+		background: #9147ff;
+		cursor: pointer;
+		border-radius: 50%;
+		border: none;
+	}
+
+	.volume-input {
+		width: 100%;
+		padding: 8px;
+		background: #13131a;
+		border: 1px solid #2a2a3a;
+		border-radius: 4px;
+		color: #efeff1;
+		font-size: 14px;
+		text-align: center;
+	}
+
+	/* Stats Tab */
+	.stats-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+		gap: 16px;
+		margin-bottom: 24px;
+	}
+
+	.stat-card {
+		background: #1f1f2e;
+		border: 1px solid #2a2a3a;
+		border-radius: 8px;
+		padding: 20px;
+		text-align: center;
+	}
+
+	.stat-card h3 {
+		margin: 0 0 12px 0;
+		font-size: 14px;
+		font-weight: 600;
+		color: #adadb8;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+
+	.stat-large {
+		font-size: 32px;
+		font-weight: 700;
+		color: #efeff1;
+	}
+
+	.connection-info {
+		background: #1f1f2e;
+		border: 1px solid #2a2a3a;
+		border-radius: 8px;
+		padding: 20px;
+	}
+
+	.connection-info h3 {
+		margin: 0 0 16px 0;
+		font-size: 18px;
+		font-weight: 600;
+		color: #efeff1;
+	}
+
+	.info-row {
+		display: flex;
+		justify-content: space-between;
+		padding: 8px 0;
+	}
+
+	.info-label {
+		font-weight: 600;
+		color: #adadb8;
+	}
+
+	.info-value {
+		color: #efeff1;
+	}
+
+	.info-value.connected {
+		color: #00f593;
+	}
+
+	/* Settings Tab */
+	.settings-section {
+		background: #1f1f2e;
+		border: 1px solid #2a2a3a;
+		border-radius: 8px;
+		padding: 20px;
+		margin-bottom: 16px;
+	}
+
+	.settings-section h3 {
+		margin: 0 0 12px 0;
+		font-size: 18px;
+		font-weight: 600;
+		color: #efeff1;
+	}
+
+	.settings-section p {
+		margin: 8px 0;
+		color: #adadb8;
+		line-height: 1.6;
+	}
+
+	.settings-section strong {
+		color: #efeff1;
+	}
+
+	.settings-section strong.connected {
+		color: #00f593;
+	}
+
+	/* Control Buttons */
+	.control-btn {
+		padding: 10px 20px;
+		background: #1f1f2e;
+		border: 1px solid #2a2a3a;
+		border-radius: 4px;
+		color: #efeff1;
+		font-size: 14px;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.2s;
+		white-space: nowrap;
+	}
+
+	.control-btn:hover:not(:disabled) {
+		background: #2a2a3a;
+		border-color: #3a3a4a;
+	}
+
+	.control-btn.primary {
+		background: #9147ff;
+		border-color: #9147ff;
+	}
+
+	.control-btn.primary:hover:not(:disabled) {
+		background: #7c3aed;
+	}
+
+	.control-btn.primary.active {
+		background: #e91916;
+		border-color: #e91916;
+	}
+
+	.control-btn.secondary {
+		background: #13131a;
+	}
+
+	.control-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	/* Preserved old styles for side panels */
 	.panel {
 		background: #1f1f2e;
 		border: 1px solid #2a2a3a;

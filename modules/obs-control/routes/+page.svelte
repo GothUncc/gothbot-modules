@@ -71,8 +71,9 @@
 
 	async function loadAllData() {
 		try {
+			// Load scenes first to get currentScene, then load sources
+			await loadScenes();
 			await Promise.all([
-				loadScenes(),
 				loadSources(),
 				loadAudioSources(),
 				loadControls(),

@@ -44,7 +44,6 @@
 	let showScreenshotPanel = false;
 
 	let refreshInterval;
-	let audioInterval;
 
 	onMount(async () => {
 		initializeWebSocket();
@@ -54,19 +53,10 @@
 		
 		// Refresh every 2 seconds
 		refreshInterval = setInterval(loadAllData, 2000);
-		
-		// Simulate audio levels (real levels would need WebSocket events)
-		audioInterval = setInterval(() => {
-			audioSources = audioSources.map(source => ({
-				...source,
-				peak: source.muted ? 0 : Math.random() * source.volume
-			}));
-		}, 100);
 	});
 
 	onDestroy(() => {
 		if (refreshInterval) clearInterval(refreshInterval);
-		if (audioInterval) clearInterval(audioInterval);
 	});
 
 	async function loadAllData() {

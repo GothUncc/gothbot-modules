@@ -2089,7 +2089,7 @@ function registerWebSocketHandler(context, obsServices, automationEngine) {
 
 module.exports = {
   name: 'obs-control',
-  version: '0.9.10',
+  version: '0.9.11',
 
   /**
    * Configuration schema
@@ -2354,6 +2354,9 @@ module.exports = {
         try {
           context.logger.info('Registering OBS Control web UI');
 
+          // Register API endpoints FIRST (before static middleware that might catch-all)
+          registerAPIRoutes(context, obsServices, automationEngine);
+
           // Serve static UI files from build directory at /ui/ to avoid conflicting with /api/ routes
           // This prevents the static file middleware from intercepting API calls
           context.web.serveStatic('/ui', './build', {
@@ -2362,9 +2365,6 @@ module.exports = {
               context: context
             }
           });
-
-          // Register API endpoints
-          registerAPIRoutes(context, obsServices, automationEngine);
 
           // Register WebSocket handler for real-time updates
           if (context.web.registerWebSocket) {

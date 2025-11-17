@@ -161,12 +161,18 @@
 	async function loadAudioSources() {
 		try {
 			const response = await fetch(`${API_PREFIX}/api/obs/audio`);
+			if (!response.ok) {
+				console.warn('Audio API returned', response.status);
+				return;
+			}
 			const data = await response.json();
-			audioSources = data.audioSources.map(s => ({
-				...s,
-				peak: s.muted ? 0 : s.volume
-			}));
-			console.log('Loaded audio sources:', audioSources);
+			if (data && data.audioSources && Array.isArray(data.audioSources)) {
+				audioSources = data.audioSources.map(s => ({
+					...s,
+					peak: s.muted ? 0 : s.volume
+				}));
+				console.log('Loaded audio sources:', audioSources);
+			}
 		} catch (error) {
 			console.error('Failed to load audio sources:', error);
 		}
@@ -1015,27 +1021,26 @@
 					<h2>Audio Mixer</h2>
 				</div>
 
-				<div class="audio-mixer-enhanced">
+				<div class="audio-mixer-horizontal">
 					{#each audioSources as audio, i}
-						<div class="audio-channel">
-							<div class="channel-header">
+						<div class="audio-channel-horizontal">
+							<div class="channel-info">
 								<h4 class="channel-name" title={audio.name}>{audio.name}</h4>
-							</div>
-							<div class="channel-meter">
-								<div class="meter-bar">
-									<div class="meter-fill" style="--peak-height: {audio.peak}%"></div>
-								</div>
-							</div>
-							<div class="channel-controls">
 								<button 
-									class="mute-btn"
+									class="mute-btn-inline"
 									class:muted={audio.muted}
 									on:click={() => toggleMute(i)}
 									title={audio.muted ? 'Unmute' : 'Mute'}
 								>
 									{audio.muted ? '🔇' : '🔊'}
 								</button>
-								<label class="volume-label">Volume: {audio.volume}%</label>
+							</div>
+							<div class="channel-meter-horizontal">
+								<div class="meter-bar-horizontal">
+									<div class="meter-fill-horizontal" style="--peak-width: {audio.peak}%"></div>
+								</div>
+							</div>
+							<div class="channel-volume-controls">
 								<input 
 									type="range" 
 									min="0" 
@@ -1043,7 +1048,7 @@
 									step="1"
 									value={audio.volume}
 									on:input={(e) => updateVolume(i, e)}
-									class="volume-slider"
+									class="volume-slider-horizontal"
 								/>
 								<input 
 									type="number" 
@@ -1052,7 +1057,7 @@
 									step="1"
 									value={audio.volume}
 									on:input={(e) => updateVolume(i, e)}
-									class="volume-input"
+									class="volume-input-small"
 								/>
 							</div>
 						</div>
@@ -1815,22 +1820,28 @@
 		gap: 4px;
 	}
 
-	/* Audio Tab */
-	.audio-mixer-enhanced {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-		gap: 16px;
+	/* Audio Tab - Horizontal Meters */
+	.audio-mixer-horizontal {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
 	}
 
-	.audio-channel {
+	.audio-channel-horizontal {
 		background: #1f1f2e;
 		border: 1px solid #2a2a3a;
 		border-radius: 8px;
 		padding: 16px;
+		display: grid;
+		grid-template-columns: 180px 1fr 280px;
+		gap: 16px;
+		align-items: center;
 	}
 
-	.channel-header {
-		margin-bottom: 12px;
+	.channel-info {
+		display: flex;
+		align-items: center;
+		gap: 12px;
 	}
 
 	.channel-name {
@@ -1841,68 +1852,63 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+		flex: 1;
 	}
 
-	.channel-meter {
-		margin-bottom: 12px;
-		height: 120px;
+	.mute-btn-inline {
+		padding: 6px 10px;
+		background: #13131a;
+		border: 1px solid #2a2a3a;
+		border-radius: 4px;
+		color: #efeff1;
+		font-size: 16px;
+		cursor: pointer;
+		transition: all 0.2s;
+		flex-shrink: 0;
+	}
+
+	.mute-btn-inline:hover {
+		background: #2a2a3a;
+	}
+
+	.mute-btn-inline.muted {
+		background: #e91916;
+		border-color: #e91916;
+	}
+
+	.channel-meter-horizontal {
+		flex: 1;
 		display: flex;
-		align-items: flex-end;
+		align-items: center;
 	}
 
-	.meter-bar {
+	.meter-bar-horizontal {
 		width: 100%;
-		height: 100%;
+		height: 32px;
 		background: #13131a;
 		border-radius: 4px;
 		position: relative;
 		overflow: hidden;
 	}
 
-	.meter-fill {
+	.meter-fill-horizontal {
 		position: absolute;
-		bottom: 0;
 		left: 0;
-		right: 0;
-		height: var(--peak-height, 0%);
-		background: linear-gradient(to top, #00f593, #9147ff);
-		transition: height 0.1s;
+		top: 0;
+		bottom: 0;
+		width: var(--peak-width, 0%);
+		background: linear-gradient(to right, #00f593 0% 70%, #ffd000 70% 85%, #f44 85%);
+		transition: width 0.1s ease-out;
 	}
 
-	.channel-controls {
+	.channel-volume-controls {
 		display: flex;
-		flex-direction: column;
-		gap: 8px;
+		align-items: center;
+		gap: 12px;
 	}
 
-	.volume-label {
-		font-size: 12px;
-		color: #adadb8;
-		text-align: center;
-	}
-
-	.mute-btn {
-		padding: 8px;
-		background: #13131a;
-		border: 1px solid #2a2a3a;
-		border-radius: 4px;
-		color: #efeff1;
-		font-size: 18px;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.mute-btn:hover {
-		background: #2a2a3a;
-	}
-
-	.mute-btn.muted {
-		background: #e91916;
-		border-color: #e91916;
-	}
-
-	.volume-slider {
-		width: 100%;
+	.volume-slider-horizontal {
+		flex: 1;
 		height: 6px;
 		-webkit-appearance: none;
 		background: #13131a;
@@ -1910,7 +1916,7 @@
 		outline: none;
 	}
 
-	.volume-slider::-webkit-slider-thumb {
+	.volume-slider-horizontal::-webkit-slider-thumb {
 		-webkit-appearance: none;
 		appearance: none;
 		width: 16px;
@@ -1920,7 +1926,7 @@
 		border-radius: 50%;
 	}
 
-	.volume-slider::-moz-range-thumb {
+	.volume-slider-horizontal::-moz-range-thumb {
 		width: 16px;
 		height: 16px;
 		background: #9147ff;
@@ -1929,14 +1935,14 @@
 		border: none;
 	}
 
-	.volume-input {
-		width: 100%;
-		padding: 8px;
+	.volume-input-small {
+		width: 60px;
+		padding: 6px 8px;
 		background: #13131a;
 		border: 1px solid #2a2a3a;
 		border-radius: 4px;
 		color: #efeff1;
-		font-size: 14px;
+		font-size: 13px;
 		text-align: center;
 	}
 

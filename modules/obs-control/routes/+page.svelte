@@ -3,9 +3,9 @@
 	import { connectionStatus } from './stores/obsStatus.js';
 	import { initializeWebSocket } from './lib/websocket.js';
 
-	// Module routes are at /modules/obs-master-control/*
-	// Static assets are at /module-ui/obs-master-control/*
-	const API_PREFIX = '/modules/obs-master-control';
+	// Core v2.0.209+: Module APIs moved from /modules/ to /module-ui/
+	// Complete URL separation: admin config at /modules/, dashboard at /module-ui/
+	const API_PREFIX = '/module-ui/obs-master-control';
 
 	// OBS State - NOW REAL DATA
 	let scenes = [];

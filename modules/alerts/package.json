@@ -1,6 +1,6 @@
 {
   "name": "@gothbot/alerts",
-  "version": "3.0.0",
+  "version": "2.0.0",
   "type": "module",
   "description": "Next-generation alert system for stream events with unified overlay architecture, template management, and complete visual customization",
   "main": "index.js",

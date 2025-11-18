@@ -1,6 +1,6 @@
 {
-  "version": "1.0.34",
-  "lastUpdated": "2025-11-17T17:10:00Z",
+  "version": "1.0.35",
+  "lastUpdated": "2025-11-17T20:15:00Z",
   "description": "Official GothBot Module Marketplace",
   "modules": [
     {
@@ -97,34 +97,55 @@
     },
     {
       "id": "alerts",
+      "moduleId": "alerts",
       "name": "Alert System",
-      "version": "1.0.1",
-      "description": "Multi-platform stream alerts with custom animations, sounds, and TTS support. Display beautiful alerts for follows, subscriptions, raids, donations, and cheers.",
+      "version": "2.0.0",
+      "description": "Next-generation alert system with unified overlay architecture, complete template customization, and modern SvelteKit admin UI. Create stunning alerts with HTML/CSS editor, manage queue priorities, and track alert history.",
+      "lastUpdated": "2025-11-17T20:15:00Z",
       "author": "GothBot Team",
       "category": "overlay",
-      "tags": ["alerts", "overlay", "obs", "notifications", "stream", "twitch", "kick", "youtube"],
+      "tags": ["alerts", "overlay", "notifications", "stream", "twitch", "kick", "youtube", "templates", "customization"],
       "icon": "🔔",
       "downloadUrl": "https://raw.githubusercontent.com/GothUncc/gothbot-modules/main/modules/alerts/index.js",
-      "installType": "bundled",
+      "installType": "github",
+      "metadata": {
+        "hasUI": true,
+        "ui": {
+          "title": "Alert System",
+          "description": "Manage stream alerts with template editor and queue control",
+          "entrypoint": "/ui",
+          "directory": "build",
+          "icon": "🔔",
+          "files": ["build/**/*"]
+        }
+      },
       "screenshots": [],
       "features": [
-        "Multi-platform support (Twitch, Kick, YouTube)",
-        "5 alert types (Follow, Subscribe, Raid, Donation, Cheer)",
-        "5 animation styles (Slide, Fade, Bounce, Zoom, Confetti)",
-        "Custom sound effects with volume control",
-        "Optional Text-to-Speech support",
-        "Smart queue management prevents overlaps",
-        "OBS browser source integration",
-        "17+ configuration options",
-        "Test mode for previewing alerts",
-        "Minimum amount thresholds for donations/cheers"
+        "Modern SvelteKit admin UI with 4 tabs (Templates, Settings, Sounds, History)",
+        "Complete template editor (HTML/CSS/JS customization)",
+        "5 default templates (follow, subscribe, raid, donation, cheer)",
+        "Template variable system ({{username}}, {{displayName}}, {{amount}}, etc.)",
+        "Priority-based alert queue (1-10 scale)",
+        "Queue management (pause, resume, clear, concurrent limits)",
+        "Sound library with upload support",
+        "Alert history with replay and CSV export",
+        "Statistics dashboard (total alerts, by type, engagement metrics)",
+        "Test mode for all alert types",
+        "Event filters and thresholds",
+        "Unified overlay integration (context.overlay.show())",
+        "Module API registration (12 public functions)",
+        "Persistent storage for templates and settings",
+        "HTTP media serving (/media/ endpoint)",
+        "Real-time queue status monitoring",
+        "Multi-platform event support (Twitch, Kick, YouTube)",
+        "Webhook support for external triggers",
+        "Responsive admin UI (mobile-friendly)"
       ],
       "requirements": {
-        "botVersion": ">=2.0.116",
+        "botVersion": ">=2.0.209",
         "moduleFramework": ">=1.0.0"
       },
       "documentation": "https://github.com/GothUncc/gothbot-modules/blob/main/modules/alerts/README.md",
-      "quickStart": "https://github.com/GothUncc/gothomationbotV2/blob/main/ALERT_SYSTEM_QUICKSTART.md",
       "repository": "https://github.com/GothUncc/gothbot-modules",
       "license": "MIT",
       "verified": true,
@@ -132,7 +153,14 @@
       "downloads": 0,
       "rating": 5.0,
       "createdAt": "2025-10-16T00:00:00Z",
-      "updatedAt": "2025-10-16T00:00:00Z"
+      "updatedAt": "2025-11-17T20:15:00Z",
+      "changelog": {
+        "2.0.0": "Complete production rewrite: Unified overlay architecture (NO static OBS sources), Module API registration (12 public functions for interoperability), Template system (HTML/CSS/JS with variable substitution), SvelteKit admin UI (4 tabs: Templates, Settings, Sounds, History), Priority-based queue management, Alert history with replay and CSV export, Sound library with upload support, 13 REST API endpoints, Test mode for all alert types, Event subscriptions with thresholds, Persistent storage, HTTP media serving. Breaking changes: No longer uses static OBS browser sources, API completely restructured, v1.0.x templates not compatible.",
+        "1.0.1": "Initial marketplace release with basic alert functionality",
+        "1.0.0": "Proof of concept version"
+      },
+      "dependencies": [],
+      "dependents": []
     }
   ]
 }

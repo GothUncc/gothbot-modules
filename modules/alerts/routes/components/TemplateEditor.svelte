@@ -257,11 +257,11 @@
 				<div>
 					<label class="block text-sm font-medium text-gray-700 mb-1">CSS Content</label>
 					<textarea
-						bind:value={selectedTemplate.cssContent}
-						class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-						rows="6"
-						placeholder=".alert { padding: 20px; background: blue; }"
-					></textarea>
+					bind:value={selectedTemplate.cssContent}
+					class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+					rows="6"
+					placeholder=".alert &#123; padding: 20px; background: blue; &#125;"
+				></textarea>
 				</div>
 
 				<!-- Enabled Checkbox -->

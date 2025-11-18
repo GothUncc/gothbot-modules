@@ -820,6 +820,11 @@ module.exports = {
   version: '3.0.0',
 
   async initialize(context) {
+    // Defensive check - Core bug where context is undefined
+    if (!context) {
+      throw new Error('CRITICAL: Module context is undefined. This is a Core system bug in ModuleRuntime. Context must be passed to initialize().');
+    }
+
     moduleContext = context;
 
     // Initialize queue and template manager

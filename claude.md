@@ -40,6 +40,18 @@ AI COLLABORATION PROTOCOL:
 - Prefix files: MOD_TO_CORE_* or CORE_TO_MOD_*
 - Update collaboration files, do NOT create duplicates
 - Cross-reference by filename when responding
+
+🚨 CRITICAL MODULE ARCHITECTURE IMPERATIVE 🚨
+EVERY MODULE MUST EXPOSE ALL PUBLIC FUNCTIONS VIA MODULE API
+- Modules are NOT standalone silos - they are interconnected components
+- ALL modules MUST expose their functionality for other modules to consume
+- Use context.registerApi(name, apiObject) to expose functions
+- Other modules access via context.getApi(moduleName)
+- NO private-only modules - interoperability is MANDATORY
+- Example: Alert module exposes showAlert(), Chat module exposes sendMessage()
+- This enables: Automation workflows, cross-module triggers, ecosystem integration
+- Violation: Module will be rejected from marketplace
+- Test interoperability BEFORE marking module complete
 -->
 
 ## META
@@ -165,6 +177,42 @@ context.events.* // Event subscriptions & publishing
 context.web.registerRoute(method, path, handler) // Register HTTP routes (GET/POST/PUT/DELETE)
 context.web.serveStatic(urlPath, localPath) // Serve static UI files
 context.web.getBaseUrl() // Get module's web UI base URL (/modules/{moduleId})
+
+### MODULE INTEROPERABILITY API (MANDATORY)
+🚨 ALL MODULES MUST EXPOSE PUBLIC FUNCTIONS 🚨
+
+Registration (in module's initialize() function):
+context.registerApi('moduleName', {
+  functionName: async (param1, param2) => { /* implementation */ },
+  anotherFunction: (data) => { /* implementation */ }
+});
+
+Consumption (from other modules):
+const alertApi = context.getApi('alerts');
+if (alertApi) {
+  await alertApi.showAlert({ type: 'follow', username: 'viewer' });
+}
+
+Required exports per module type:
+- Alerts: showAlert(), clearQueue(), getQueue(), testAlert()
+- Chat: sendMessage(), deleteMessage(), timeout(), ban(), getModerators()
+- Overlay: showElement(), hideElement(), updateElement(), clearOverlay()
+- Audio: playSound(), stopSound(), setVolume(), getSounds()
+- Points: addPoints(), removePoints(), getBalance(), getLeaderboard()
+- Commands: registerCommand(), unregisterCommand(), executeCommand(), getCommands()
+- Goals: createGoal(), updateProgress(), completeGoal(), getGoals()
+- Automation: createRule(), deleteRule(), executeRule(), getRules()
+
+Discovery:
+context.listAvailableApis() // Returns array of registered module API names
+
+Best practices:
+- Use async functions for I/O operations
+- Return success/error objects: {success: boolean, data?: any, error?: string}
+- Validate parameters before execution
+- Log API calls for debugging: context.logger.info('API called', {module, function, params})
+- Document all public functions in module README
+- Version your API: Include breaking changes in major version bumps
 
 ### Event Types
 50+ event types from Twitch/Kick/YouTube platforms

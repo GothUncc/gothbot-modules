@@ -1,195 +1,367 @@
-# Alert System Module
+# Alert System v3.0
 
-Multi-platform stream alerts with custom animations, sounds, and TTS support.
+Next-generation alert system for stream events using unified overlay architecture. Supports all media types, template management, and complete visual customization.
 
-## Features
+## ✨ Features
 
-- ✅ **Multi-Platform Support** - Works with Twitch, YouTube, Kick, and more
-- ✅ **Alert Types** - Follow, Subscribe, Raid, Donation, Cheer/Bits
-- ✅ **Custom Animations** - Slide, Fade, Bounce, Zoom, Confetti effects
-- ✅ **Sound Effects** - Built-in sounds with volume control
-- ✅ **Text-to-Speech** - Optional TTS for alert messages
-- ✅ **Smart Queue** - Prevents alert overlap with queue management
-- ✅ **Configurable** - Extensive customization via web UI
-- ✅ **Test Mode** - Preview alerts without real events
-- ✅ **OBS Integration** - Native OBS playback + browser source fallback
+### Core Functionality
+- ✅ **Unified Overlay Architecture** - Uses Core's overlay system (not static OBS sources)
+- ✅ **Template Management** - Create, edit, and customize alert templates
+- ✅ **5 Alert Types** - Follow, Subscribe, Raid, Donation, Cheer/Bits
+- ✅ **Module API** - Full programmatic access for other modules
+- ✅ **Smart Queue** - Priority-based alert processing with concurrent limits
+- ✅ **Event Subscriptions** - Auto-trigger alerts from platform events
 
-## OBS Native Playback (v2.0.139+)
+### Admin UI (4 Tabs)
+- **📋 Templates** - Manage alert templates with visual editor
+- **⚙️ Settings** - Configure queue, filters, thresholds, and behavior
+- **🎵 Sounds** - Upload and manage sound library
+- **📊 History** - View, filter, and replay past alerts
 
-The Alert System module can now trigger **native OBS playback** instead of just browser overlays!
+### Template System
+- **HTML/CSS Editor** - Full control over alert appearance
+- **Template Variables** - `{{username}}`, `{{displayName}}`, `{{amount}}`, `{{message}}`, `{{tier}}`, `{{months}}`, `{{viewers}}`, `{{currency}}`
+- **5 Default Templates** - Pre-built templates for each alert type
+- **Animations** - Slide In, Fade, Bounce, Zoom, Confetti
+- **Custom Duration** - Set how long each alert displays
+- **Sound Integration** - Attach audio files to templates
 
-### Setup
+### Advanced Features
+- **Conditional Display** - Min amount, min viewers, VIP/Sub only
+- **Alert Queue** - Prevents overlaps, priority ordering
+- **Test Mode** - Preview alerts before going live
+- **History Tracking** - Analytics and replay functionality
+- **Export/Import** - Share templates (CSV export for history)
+- **Webhook Support** - External services can trigger alerts
 
-1. Ensure OBS Master Core is configured:
-   - Connect GothBot to your OBS instance via WebSocket
-   - Configure in Settings → OBS
-   - Test connection with the test button
+## 📦 Installation
 
-2. Alert System will automatically detect OBS:
-   - If OBS is connected and ready, alerts trigger native playback
-   - If OBS unavailable, falls back to browser overlay (no configuration needed)
-   - Zero code changes required!
+1. Navigate to **Modules** → **Marketplace** in GothBot
+2. Find "Alert System"
+3. Click **Install**
+4. Click **Enable**
+5. Access UI at **Modules** → **Alert System**
 
-### How It Works
+## 🎯 Quick Start
 
+### 1. Access the Admin UI
+
+Navigate to the Alert System module UI to manage templates and settings.
+
+### 2. Review Default Templates
+
+The system comes with 5 pre-configured templates:
+- Follow Alert (purple gradient)
+- Subscribe Alert (pink gradient)
+- Raid Alert (yellow gradient)
+- Donation Alert (blue gradient)
+- Cheer Alert (pastel gradient)
+
+### 3. Test an Alert
+
+In the **Templates** tab, click **Test** on any template to see how it looks.
+
+### 4. Customize Templates
+
+Click **Edit** on a template to modify:
+- HTML content with template variables
+- CSS styling and animations
+- Duration and sound settings
+- Display conditions
+
+### 5. Configure Settings
+
+In the **Settings** tab:
+- Enable/disable alert types
+- Set minimum thresholds
+- Configure queue behavior
+- Adjust filters
+
+## 🔌 Module API
+
+Other modules can integrate with the Alert System:
+
+```javascript
+async initialize(context) {
+  const alertApi = context.getApi('alerts');
+  
+  if (alertApi) {
+    // Show a custom alert
+    await alertApi.showAlert({
+      type: 'follow',
+      data: {
+        username: 'CoolViewer',
+        displayName: 'CoolViewer'
+      }
+    });
+    
+    // Get queue status
+    const status = alertApi.getQueueStatus();
+    console.log(`Queue: ${status.queueLength} pending`);
+    
+    // Get all templates
+    const templates = alertApi.getTemplates();
+    
+    // Test an alert
+    await alertApi.testAlert('subscribe');
+    
+    // Create a custom template
+    await alertApi.createTemplate({
+      name: 'My Custom Alert',
+      eventType: 'follow',
+      htmlContent: '<div>Custom content</div>',
+      cssContent: '.custom { color: red; }',
+      duration: 5000
+    });
+  }
+}
 ```
-Follow/Subscribe/Raid Event
-  ↓
-Alert System detects event
-  ↓
-Checks if context.obsApi available
-  ├─ YES → Triggers `context.obsApi.playMedia()`
-  │        Native OBS playback with automatic cleanup
-  └─ NO → Falls back to browser overlay
-         Displays in traditional browser source
+
+### Available API Methods
+
+- `showAlert(config)` - Display an alert
+- `testAlert(type)` - Test a specific alert type
+- `getTemplates(filter)` - Get all templates (optionally filtered)
+- `getTemplate(id)` - Get a specific template
+- `createTemplate(template)` - Create a new template
+- `updateTemplate(id, updates)` - Update a template
+- `deleteTemplate(id)` - Delete a template
+- `getQueue()` - Get pending alerts
+- `getQueueStatus()` - Get queue status
+- `clearQueue()` - Clear all pending alerts
+- `pauseQueue()` - Pause alert processing
+- `resumeQueue()` - Resume alert processing
+
+## 📝 Template Variables
+
+Use these variables in your HTML/CSS content:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `{{username}}` | Platform username | `coolviewer` |
+| `{{displayName}}` | Display name | `CoolViewer` |
+| `{{amount}}` | Donation/bits amount | `5.00` or `100` |
+| `{{message}}` | User message | `Great stream!` |
+| `{{tier}}` | Subscription tier | `1`, `2`, or `3` |
+| `{{months}}` | Months subscribed | `1`, `12`, etc. |
+| `{{viewers}}` | Raid viewer count | `50` |
+| `{{currency}}` | Currency code | `USD`, `EUR`, etc. |
+
+## 🎨 Creating Custom Templates
+
+### Example: Custom Follow Alert
+
+```html
+<!-- HTML Content -->
+<div class="custom-alert">
+  <div class="icon">🎉</div>
+  <div class="content">
+    <div class="title">New Follower!</div>
+    <div class="name">{{displayName}}</div>
+  </div>
+</div>
 ```
 
-### Benefits
+```css
+/* CSS Content */
+.custom-alert {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 30px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  animation: slideInFromTop 0.5s ease-out;
+}
 
-- **Native Playback**: Media plays directly from OBS, not browser
-- **Better Performance**: Lower latency, higher reliability
-- **Automatic Cleanup**: Sources auto-delete after playback
-- **Fallback Safety**: Always works, even without OBS
+.icon {
+  font-size: 60px;
+}
 
-## Installation
+.title {
+  font-size: 28px;
+  font-weight: bold;
+  color: white;
+}
 
-1. Navigate to the Modules section in the GothBot admin panel
-2. Find "Alert System" in the marketplace
-3. Click "Install"
-4. Click "Enable" to activate the module
+.name {
+  font-size: 40px;
+  font-weight: bold;
+  color: #FFD700;
+}
 
-## Configuration
+@keyframes slideInFromTop {
+  from {
+    transform: translateY(-100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+```
 
-### Alert Types
+## ⚙️ Configuration Options
 
-Enable or disable specific alert types:
-- **Follow Alerts** - Show when someone follows
-- **Subscribe Alerts** - Show for subscriptions
-- **Raid Alerts** - Show for incoming raids
-- **Donation Alerts** - Show for donations/tips
-- **Cheer Alerts** - Show for bits/cheers
+### Queue Settings
+- **Max Concurrent** - How many alerts can display at once (1-5)
+- **Min Delay** - Minimum time between alerts in milliseconds
 
-### Display Settings
+### Event Filters
+- **Enable/Disable** - Toggle specific alert types
+- **Min Raid Viewers** - Only show raids above this count
+- **Min Donation Amount** - Minimum donation to trigger alert
+- **Min Cheer Bits** - Minimum bits to trigger alert
 
-- **Alert Duration** - How long each alert displays (2-30 seconds)
-- **Animation Style** - Choose from slide, fade, bounce, zoom, or confetti
-- **Alert Position** - Where alerts appear on screen
-- **Sound Volume** - Alert sound volume (0-100)
+### Alert Behavior
+- **Deduplication** - Prevent duplicate alerts
+- **Pause During BRB** - Pause alerts when stream is in BRB scene
+- **Auto-Skip** - Skip alerts when stream is offline
 
-### Minimum Amounts
+## 🔄 Migration from v1.0.x
 
-Set minimum amounts to trigger alerts:
-- **Minimum Donation** - Minimum donation amount
-- **Minimum Cheers** - Minimum bits to trigger alert
+### What Changed
 
-### Text-to-Speech
+**Breaking Changes:**
+- No longer uses static OBS browser sources
+- Now integrates with Core's unified overlay system
+- Module API completely restructured
 
-- **Enable TTS** - Read alert messages aloud
-- **TTS Voice** - Choose voice (US, UK, AU English)
+**What to Do:**
+1. **Remove old browser source** - Not needed anymore
+2. **Configuration preserved** - Your settings will work
+3. **Templates new** - Default templates included, customize as needed
+4. **Test alerts** - Verify everything works after upgrade
 
-### Custom Sounds
+### Benefits of v3.0
+- ✅ No persistent OBS sources cluttering your scene list
+- ✅ Dynamic alert rendering through unified overlay
+- ✅ Better performance and reliability
+- ✅ Full template customization
+- ✅ Module interoperability
+- ✅ Professional admin UI
 
-Add your own alert sounds by providing URLs:
-- **Follow Sound URL** - Custom sound for follows
-- **Subscribe Sound URL** - Custom sound for subscriptions
-- **Raid Sound URL** - Custom sound for raids
+## 📡 Webhook API
 
-## OBS Browser Source Setup
+Trigger alerts from external services:
 
-1. In OBS, add a new Browser Source
-2. Set the URL to: `http://your-gothbot-url/overlay/alerts`
-3. Set dimensions:
-   - Width: 1920
-   - Height: 1080
-4. Check "Shutdown source when not visible"
-5. Uncheck "Control audio via OBS"
-6. Click OK
+```bash
+POST /api/alerts/webhook
+Content-Type: application/json
+X-API-Key: your-api-key
 
-### Recommended OBS Settings
+{
+  "type": "custom",
+  "templateId": "template_123",
+  "data": {
+    "username": "ExternalUser",
+    "displayName": "External User",
+    "amount": 10.00,
+    "message": "From external service"
+  }
+}
+```
 
-- **FPS:** 60
-- **CSS:** (leave blank)
-- **Shutdown source when not visible:** ✅
-- **Refresh browser when scene becomes active:** ❌
+## 🐛 Troubleshooting
 
-## Testing Alerts
+### Alerts Not Showing
 
-The module includes a test mode to preview alerts:
+1. **Check overlay system** - Ensure Core's unified overlay is working
+2. **Check module logs** - Look for errors in module logs
+3. **Test alert** - Use test mode to verify functionality
+4. **Check queue** - Queue might be paused or full
 
-1. Go to Modules → Alert System → Configure
-2. Scroll to the bottom
-3. Click "Test Alert" buttons for each type
-4. Verify alerts appear correctly in OBS
+### Templates Not Saving
 
-## Troubleshooting
+1. **Check permissions** - Module needs storage access
+2. **Check logs** - Look for save errors
+3. **Validate HTML/CSS** - Ensure no syntax errors
 
-### Alerts not showing
+### No Sound Playing
 
-1. Check that the module is enabled
-2. Verify platform connections are active
-3. Check minimum amount settings
-4. Test using the "Test Alert" feature
+1. **Check sound library** - Ensure sound file uploaded
+2. **Check volume** - Volume set too low
+3. **Check browser** - Browser may block autoplay
 
-### No sound
+## 🎓 Advanced Usage
 
-1. Check sound volume setting (must be > 0)
-2. In OBS, uncheck "Control audio via OBS" on the browser source
-3. Ensure your browser allows audio autoplay
+### Custom Animation Example
 
-### Alerts overlapping
+```css
+@keyframes customEntry {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2) rotate(180deg);
+  }
+  100% {
+    transform: scale(1) rotate(360deg);
+    opacity: 1;
+  }
+}
 
-The module includes queue management to prevent overlaps. If you still experience issues:
-1. Increase Alert Duration
-2. Check that you only have one Alert System module enabled
+.alert-container {
+  animation: customEntry 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+```
 
-## API Endpoints
+### Conditional Display Logic
 
-The module exposes these endpoints for overlay integration:
+Set conditions in template settings:
+- **Min Amount** - Only show if amount >= threshold
+- **Min Viewers** - Only show if viewers >= threshold
+- **VIP Only** - Only show for VIP viewers
+- **Sub Only** - Only show for subscribers
+- **First Time Only** - Only show for first-time events
 
-- `GET /api/modules/alerts/data/currentAlert` - Get current alert to display
-- `GET /api/modules/alerts/config` - Get module configuration
-- `POST /api/modules/alerts/test/:type` - Trigger test alert
+## 📊 Analytics
 
-## Customization
+The **History** tab provides:
+- Total alerts displayed
+- Breakdown by type (follows, subs, raids, etc.)
+- Date filtering and search
+- Replay functionality
+- CSV export for external analysis
 
-### Custom Sounds
+## 🔐 Security
 
-Place audio files in `modules/alerts/sounds/`:
-- `follow.mp3` - Follow alert sound
-- `subscribe.mp3` - Subscribe alert sound
-- `raid.mp3` - Raid alert sound
-- `donation.mp3` - Donation alert sound
-- `cheer.mp3` - Cheer alert sound
+- Webhook API requires X-API-Key header
+- Templates run in sandboxed environment
+- No direct filesystem access
+- Input validation on all endpoints
 
-### Custom Templates
+## 🚀 Performance
 
-Edit `modules/alerts/templates/overlay.html` to customize:
-- Alert appearance
-- Animations
-- Positioning
-- Colors and fonts
+- Queue system prevents alert overlaps
+- Efficient storage using context.storage
+- Minimal memory footprint
+- Fast template rendering
 
-## Module Data Storage
+## 📄 License
 
-The module stores:
-- **Current Alert** - Currently displaying alert
-- **Alert History** - Last 100 alerts (for stats/replay)
+MIT License - See LICENSE file for details
 
-## Performance
+## 🤝 Support
 
-- Lightweight - Minimal CPU usage
-- Smart queue - Prevents memory leaks
-- Efficient rendering - 60 FPS animations
-- Small footprint - ~500KB total
+- **Documentation**: This README
+- **Issues**: GitHub Issues
+- **Discord**: Community Discord (coming soon)
 
-## Support
+## 🔮 Future Features (Phase 2+)
 
-For issues or questions:
-1. Check module logs in admin panel
-2. Verify configuration settings
-3. Test with different platforms
-4. Report bugs on GitHub
+- AI template generation (Ollama integration)
+- Template marketplace
+- Cloud media storage (Backblaze B2/S3)
+- Advanced animations library
+- Multi-language support
+- Video/GIF media support
+- YouTube embed support
 
-## License
+---
 
-MIT License - Part of GothomationBot
+**Version**: 3.0.0  
+**Status**: Production Ready  
+**Maintained by**: GothBot Team
